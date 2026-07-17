@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentcut.local/schema/timeline-project-0.1.schema.json",
+  "title": "AgentCut Timeline Project 0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "project", "assets", "sequences", "styleSpecs", "artifacts", "exportPresets", "versions", "history"],
+  "properties": {
+    "schemaVersion": { "const": "0.1.0" },
+    "project": { "$ref": "#/$defs/project" },
+    "assets": { "type": "array", "items": { "$ref": "#/$defs/asset" } },
+    "sequences": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/sequence" } },
+    "styleSpecs": { "type": "array", "items": { "type": "object" } },
+    "artifacts": { "type": "array", "items": { "type": "object" } },
+    "exportPresets": { "type": "array", "items": { "type": "object" } },
+    "versions": { "type": "array", "items": { "type": "object" } },
+    "history": { "$ref": "#/$defs/history" },
+    "extensions": { "type": "object" }
+  },
+  "$defs": {
+    "id": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "rate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["numerator", "denominator"],
+      "properties": {
+        "numerator": { "type": "integer", "minimum": 1, "maximum": 1000000000 },
+        "denominator": { "type": "integer", "minimum": 1, "maximum": 1000000000 }
+      }
+    },
+    "time": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "rate"],
+      "properties": {
+        "value": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "rate": { "$ref": "#/$defs/rate" }
+      }
+    },
+    "timeRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "duration"],
+      "properties": {
+        "start": { "$ref": "#/$defs/time" },
+        "duration": { "$ref": "#/$defs/time" }
+      }
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": { "enum": ["user", "agent", "workflow"] },
+        "id": { "$ref": "#/$defs/id" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["createdBy", "createdAt", "reason"],
+      "properties": {
+        "createdBy": { "$ref": "#/$defs/actor" },
+        "createdAt": { "$ref": "#/$defs/timestamp" },
+        "reason": { "type": "string", "minLength": 1 },
+        "sourceArtifactIds": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true }
+      }
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "createdAt", "updatedAt", "activeSequenceId", "revision"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "type": "string", "minLength": 1 },
+        "createdAt": { "$ref": "#/$defs/timestamp" },
+        "updatedAt": { "$ref": "#/$defs/timestamp" },
+        "activeSequenceId": { "$ref": "#/$defs/id" },
+        "revision": { "type": "integer", "minimum": 0 },
+        "defaultStyleSpecId": { "$ref": "#/$defs/id" }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "uri", "contentHash", "availability", "provenance"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["video", "audio", "image", "font", "generated"] },
+        "uri": { "type": "string", "minLength": 1 },
+        "contentHash": { "type": "string", "minLength": 8 },
+        "availability": { "enum": ["online", "offline", "missing"] },
+        "provenance": { "$ref": "#/$defs/provenance" },
+        "metadata": { "type": "object" }
+      }
+    },
+    "clip": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "timelineRange", "enabled", "provenance"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["media", "caption", "text", "image", "sticker", "shape", "nestedSequence", "gap"] },
+        "assetId": { "$ref": "#/$defs/id" },
+        "sequenceId": { "$ref": "#/$defs/id" },
+        "streamIndex": { "type": "integer", "minimum": 0 },
+        "timelineRange": { "$ref": "#/$defs/timeRange" },
+        "sourceRange": { "$ref": "#/$defs/timeRange" },
+        "enabled": { "type": "boolean" },
+        "transform": { "type": "object" },
+        "audio": { "type": "object" },
+        "content": { "type": "object" },
+        "animations": { "type": "array", "items": { "type": "object" } },
+        "effects": { "type": "array", "items": { "type": "object" } },
+        "provenance": { "$ref": "#/$defs/provenance" },
+        "metadata": { "type": "object" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "media" } }, "required": ["kind"] },
+          "then": { "required": ["assetId", "sourceRange"] }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "nestedSequence" } }, "required": ["kind"] },
+          "then": { "required": ["sequenceId"] }
+        }
+      ]
+    },
+    "track": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "name", "order", "locked", "enabled", "clips", "transitions"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["video", "audio", "caption", "graphic"] },
+        "name": { "type": "string", "minLength": 1 },
+        "order": { "type": "integer", "minimum": 0 },
+        "locked": { "type": "boolean" },
+        "enabled": { "type": "boolean" },
+        "muted": { "type": "boolean" },
+        "clips": { "type": "array", "items": { "$ref": "#/$defs/clip" } },
+        "transitions": { "type": "array", "items": { "type": "object" } }
+      }
+    },
+    "lock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "owner", "mode", "scope", "createdAt"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "owner": { "$ref": "#/$defs/id" },
+        "mode": { "enum": ["deny_agent", "owner_only"] },
+        "createdAt": { "$ref": "#/$defs/timestamp" },
+        "note": { "type": "string" },
+        "scope": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "clipId"],
+              "properties": { "kind": { "const": "clip" }, "clipId": { "$ref": "#/$defs/id" } }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "trackId"],
+              "properties": { "kind": { "const": "track" }, "trackId": { "$ref": "#/$defs/id" } }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "range"],
+              "properties": {
+                "kind": { "const": "range" },
+                "range": { "$ref": "#/$defs/timeRange" },
+                "trackIds": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "objectId", "path"],
+              "properties": {
+                "kind": { "const": "property" },
+                "objectId": { "$ref": "#/$defs/id" },
+                "path": { "type": "string", "pattern": "^/" }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "sequence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "canvas", "frameRate", "tracks", "locks", "markers"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "type": "string", "minLength": 1 },
+        "canvas": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["width", "height", "background"],
+          "properties": {
+            "width": { "type": "integer", "minimum": 1, "maximum": 16384 },
+            "height": { "type": "integer", "minimum": 1, "maximum": 16384 },
+            "background": { "type": "string", "minLength": 1 },
+            "pixelAspect": { "$ref": "#/$defs/rate" }
+          }
+        },
+        "frameRate": { "$ref": "#/$defs/rate" },
+        "tracks": { "type": "array", "items": { "$ref": "#/$defs/track" } },
+        "locks": { "type": "array", "items": { "$ref": "#/$defs/lock" } },
+        "markers": { "type": "array", "items": { "type": "object" } },
+        "styleSpecId": { "$ref": "#/$defs/id" },
+        "exportPresetId": { "$ref": "#/$defs/id" }
+      }
+    },
+    "historyRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transactionId", "baseRevision", "committedRevision", "actor", "reason", "beforeHash", "afterHash", "committedAt"],
+      "properties": {
+        "transactionId": { "$ref": "#/$defs/id" },
+        "baseRevision": { "type": "integer", "minimum": 0 },
+        "committedRevision": { "type": "integer", "minimum": 1 },
+        "actor": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "beforeHash": { "type": "string", "minLength": 8 },
+        "afterHash": { "type": "string", "minLength": 8 },
+        "committedAt": { "$ref": "#/$defs/timestamp" },
+        "commandUri": { "type": "string", "minLength": 1 }
+      }
+    },
+    "history": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["headRevision", "records"],
+      "properties": {
+        "headRevision": { "type": "integer", "minimum": 0 },
+        "records": { "type": "array", "items": { "$ref": "#/$defs/historyRecord" } }
+      }
+    }
+  }
+}

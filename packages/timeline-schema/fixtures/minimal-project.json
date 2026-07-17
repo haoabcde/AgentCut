@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "0.1.0",
+  "project": {
+    "id": "project_demo_001",
+    "name": "中文口播技术验证",
+    "createdAt": "2026-07-17T08:00:00Z",
+    "updatedAt": "2026-07-17T08:00:00Z",
+    "activeSequenceId": "sequence_main",
+    "revision": 0
+  },
+  "assets": [
+    {
+      "id": "asset_camera_a",
+      "kind": "video",
+      "uri": "media/talking-head.mp4",
+      "contentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "availability": "online",
+      "provenance": {
+        "createdBy": { "kind": "user", "id": "local_user" },
+        "createdAt": "2026-07-17T08:00:00Z",
+        "reason": "用户导入主口播素材"
+      }
+    }
+  ],
+  "sequences": [
+    {
+      "id": "sequence_main",
+      "name": "主版本 9:16",
+      "canvas": { "width": 1080, "height": 1920, "background": "#000000" },
+      "frameRate": { "numerator": 30000, "denominator": 1001 },
+      "tracks": [
+        {
+          "id": "track_v1",
+          "kind": "video",
+          "name": "主画面",
+          "order": 0,
+          "locked": false,
+          "enabled": true,
+          "clips": [
+            {
+              "id": "clip_take_1",
+              "kind": "media",
+              "assetId": "asset_camera_a",
+              "streamIndex": 0,
+              "timelineRange": {
+                "start": { "value": 0, "rate": { "numerator": 30000, "denominator": 1001 } },
+                "duration": { "value": 300, "rate": { "numerator": 30000, "denominator": 1001 } }
+              },
+              "sourceRange": {
+                "start": { "value": 30, "rate": { "numerator": 30000, "denominator": 1001 } },
+                "duration": { "value": 300, "rate": { "numerator": 30000, "denominator": 1001 } }
+              },
+              "enabled": true,
+              "provenance": {
+                "createdBy": { "kind": "workflow", "id": "talking_head_v1" },
+                "createdAt": "2026-07-17T08:00:00Z",
+                "reason": "保留第一次有效表达"
+              }
+            }
+          ],
+          "transitions": []
+        }
+      ],
+      "locks": [],
+      "markers": []
+    }
+  ],
+  "styleSpecs": [],
+  "artifacts": [],
+  "exportPresets": [],
+  "versions": [],
+  "history": { "headRevision": 0, "records": [] }
+}
