@@ -13,12 +13,13 @@
 - 新增根目录 `AGENTS.md`，要求每批有效修改同步维护本文件。
 - 在 README 文档索引中加入开发记录入口。
 - 更新 `.gitignore`，避免提交本地 pnpm store、依赖目录、构建产物、覆盖率和日志。
-- 准备将现有工作区初始化并发布为 GitHub 私有仓库。
+- 初始化本地 Git `main` 分支，首次提交为 `a33dbd2`。
+- 创建 GitHub 私有仓库 `haoabcde/AgentCut`，配置 `origin` 并推送 `main`。
 
 ### 验证
 
 - 核对规则覆盖代码、测试、架构、依赖、配置和产品文档修改。
-- GitHub 私有仓库创建与首次推送将在授权恢复后单独核验。
+- GitHub 返回仓库 URL `https://github.com/haoabcde/AgentCut`，首次推送成功且本地 `main` 已跟踪 `origin/main`。
 
 ### 限制与后续
 
