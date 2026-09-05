@@ -189,6 +189,8 @@ sequenceDiagram
   end
 ```
 
+Studio 与 Agent 一样必须在 UI 事件边界生成并持有稳定 request ID，API helper 不得为写操作偷偷换 ID。浏览器收到成功或明确 4xx 后结束该 intent；断连/5xx 先查询 SQLite 最新投影，查询失败则保留原 `scope + canonical payload + requestId`，只允许相同 payload 重试，禁止未知 accept 变成 keep 等矛盾写入。pending intent 只是当前页面的 transient recovery state，不持久化为第二份 Timeline；页面重启后权威恢复入口仍是 project revision、command record、job 和 evidence event 查询。
+
 ### 6.3 自动工作流
 
 Workflow Engine 只编排 stage 状态和 artifacts，不直接突变 Timeline：
@@ -293,10 +295,12 @@ V0.1 自持 timeline interaction model；可使用 Canvas/WebGL 做绘制，但�
 
 ### 10.3 浏览器预览
 
-- `timeline-engine` 将 IR 在时间 `t` 评估为 renderer-neutral `SceneEvaluationGraph`。
-- 首选：Mediabunny/WebCodecs + Canvas2D/WebGL；codec 不支持则使用 FFmpeg proxy。
-- Audio 使用 Web Audio graph，主时钟由统一 playback controller 管理。
-- 不以第三方 composition/store 作为 truth；OpenReel/Diffusion/OpenVideo 若采用，只实现 PreviewAdapter。
+- 当前单素材 Alpha 由共享 Timeline evaluator 生成 `PreviewPlan`，HTML video 按其中的 source range 跳转；所有 UI seek 和播放头继续使用 timeline time。后续多轨阶段再把同一 evaluator 扩展为 renderer-neutral `SceneEvaluationGraph`。
+- CandidateSet 允许不同 detector 保存各自证据，但审阅投影必须对所有仍未决的 source range 建连通重叠组。每组按风险、文字目标优先于 gap 的确定性规则选一个 `overlapDecisionAnchorId`；daemon 拒绝先决定非主项。主项决定 transaction 同时为其余组员写 source-bound overlap-group locks，删除的 inverse operation 或主项 reconsider 会整组恢复。重叠关系是 SQLite/Timeline artifact 的派生投影，不在 React state、localStorage 或独立 JSON 中另存真相。
+- 浏览器兼容判定采用保守白名单：H.264/AAC MP4/M4V 直接播放不可变原片；其他输入由 FFmpeg 生成固定 profile 的全长 H.264/AAC 代理。代理是 content-addressed `generated Asset`，metadata 精确绑定 source asset ID、source content hash 与 profile；validator 拒绝漂移、错误类型和同 source/profile 重复绑定。
+- 新建工程在初始 import transaction 同时登记必要代理；转写尚未完成的中断工程可幂等收养已验证代理。clip、Transcript、候选、source locks、PreviewPlan 和 RenderPlan 始终绑定 source Asset，daemon 只把 Viewer URL 投影到代理，并在界面披露“本地兼容代理”。
+- 代理发布先写同目录 `.work-*`，经 codec、音轨和与原片时长差 `<=40 ms` 验证后原子、无覆盖发布；相同 source/profile 续跑验证并收养现有文件。源 MP4 已兼容时不生成代理。
+- 未来可用 Mediabunny/WebCodecs + Canvas2D/WebGL 和 Web Audio 替换播放 adapter，但不以第三方 composition/store 作为 truth；OpenReel/Diffusion/OpenVideo 若采用，也只实现 PreviewAdapter。
 
 ## 11. 预览与最终渲染一致性
 
@@ -371,7 +375,7 @@ Provider 响应先归一为 `AnalysisArtifact`；任何模型字段变化只改 
 
 ## 15. 安全边界
 
-- Daemon 只绑定 `127.0.0.1`/`::1`，随机端口，启动 token，严格 Origin/CSRF。
+- Daemon 只绑定 `127.0.0.1`/`::1`，随机端口。正式 Studio daemon 用独立 bootstrap 换取项目绑定的 `HttpOnly + SameSite=Strict` session：除静态 shell、配对入口和最小 health 外，工程 API、源视频 Range、字幕与成片读取及全部写入均需该 session；Agent route 使用另一套 capability session，不接受 UI cookie 代替。后续发布硬化仍需在 HTTP 入口增加显式 Host/Origin allowlist，不能把 Cookie 门禁描述成完整 DNS-rebinding 防护。
 - MCP session 绑定 project root 和 capabilities；默认不能遍历项目外路径。
 - 导入项目外文件需要显式 import/relink，记录真实路径但 API 默认只返回 asset ID。
 - transcript、reference 视频字幕、文件名和 metadata 全是**不可信输入**，不能被当作 Agent 指令。

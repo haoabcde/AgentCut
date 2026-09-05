@@ -1,0 +1,22 @@
+{
+  "name": "@agentcut/alpha-gate",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run src"
+  },
+  "dependencies": {
+    "@agentcut/edit-commands": "workspace:*",
+    "@agentcut/project-store": "workspace:*",
+    "@agentcut/render-engine": "workspace:*",
+    "@agentcut/review-projection": "workspace:*",
+    "@agentcut/timeline-engine": "workspace:*",
+    "@agentcut/timeline-schema": "workspace:*"
+  }
+}

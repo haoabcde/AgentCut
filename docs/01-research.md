@@ -1,6 +1,6 @@
 # AgentCut 调研报告
 
-> 调研快照：2026-07-17。仓库活跃度以本轮读取的默认分支最新提交为准；功能与许可优先采用源码、官方文档和仓库许可证。Stars、价格和产品功能会变化，不作为架构承诺。
+> 调研快照：2026-07-18。仓库活跃度以本轮读取的默认分支最新提交为准；功能与许可优先采用源码、官方文档和仓库许可证。Stars、价格和产品功能会变化，不作为架构承诺。
 
 ## 1. 结论先行
 
@@ -28,13 +28,14 @@ AgentCut 不应从任何现有编辑器 fork 出发。推荐采用“自有 Time
 
 ### 3.1 Agentchengfeng/chengfeng-videocut-skills
 
-- **定位/技术栈（事实）**：Apache-2.0；Agent Skill + Node/Shell/HTML 审核页 + FFmpeg + 火山 ASR。最新抽样提交 `d626a7d`（2026-06-26）。源码见[仓库](https://github.com/Agentchengfeng/chengfeng-videocut-skills)。
-- **核心能力（事实）**：词级转写、静音/重复/残句/口头禅候选、网页人工确认、剪后再次转写和字幕校对；规则明确区分低风险与高风险删除。
-- **架构特点（事实）**：知识和流程主要在 Skill Markdown；中间产物是目录中的 JSON/HTML/SRT；脚本直接调用 FFmpeg 与特定 ASR。
-- **可复用**：删除风险分层、候选原因、人工确认、剪后重转写、逐帧 seek 的可确定视觉模块契约。
-- **只能参考**：硬编码目录、单 Provider、shell 编排、HTML 审核状态、按文件约定拼接流程。
-- **风险（推断）**：缺少稳定 Timeline IR、事务、并发控制和通用 SDK；无法直接承载 Web NLE。
-- **关系（建议）**：将其方法写入 talking-head workflow 与 benchmark，不把脚本当核心依赖。
+- **定位/技术栈（事实）**：Apache-2.0；面向 Codex Marketplace 的中文口播插件，公开入口只有 `cut-talking-head` 与 `finish-talking-head` 两个 Skill。当前抽样提交 `e2cc73d`（2026-07-17），仓库约 2,683 stars / 368 forks；这些数字只代表本次快照。源码见[仓库](https://github.com/Agentchengfeng/chengfeng-videocut-skills)。
+- **当前架构（事实）**：Skill 负责语义判断和编排；独立安装的产品 Runtime 负责 project truth、revision/CAS、Cuts、媒体剪切、渲染和 Studio。插件仓库只包含 Runtime bootstrap/CLI bridge、预打包 MCP Server、确认卡与 Skill 文档，不包含真正的 Studio/Timeline Runtime 源码。
+- **核心契约（事实）**：候选绑定稳定 `wordIds`；Skill 不直接写 `project.json` 或 Cuts；`cuts set/apply` 都携带 expected revision；只有进入 `cut_review_ready` 才打开 Studio；确认卡只回传白名单 action 与 revision，不直接剪切；剪后重新转写并发布字幕。
+- **可复用**：真实媒体门禁、稳定 word identity、Skill/Runtime 职责分离、单写者、CAS、review-ready 才打开 UI、确认前后重新读取 revision、运行时 doctor 与失败不覆盖现有安装。
+- **不照搬**：该 Skill 明确采用“删除/未删除”两态，而 AgentCut 第一阶段需要区分候选建议与已提交删除；其产品 Runtime 不是本仓库可嵌入依赖；物理剪切产物不能替代 AgentCut 非破坏 Timeline truth。
+- **已知缺口（仓库自述事实）**：Runtime v0.1.1 尚无正式原视频 transcribe/import CLI，`render run` 仍可能缺 renderer；仓库明确不把插件可安装描述为两条工作流已经完全自动化。
+- **验证限制**：本轮 `runtime-preflight.test.cjs` 通过；未安装参考仓库依赖，因此 MCP smoke test 因缺少 `@modelcontextprotocol/sdk` 未执行完成。未安装或运行其闭源/独立 Runtime，也没有验证 Studio UI 和真实媒体 E2E。
+- **关系（建议）**：把协议层经验写入 AgentCut 的 Transcript cut、MCP contract 和 runtime preflight；不复制其 Studio 假设，不把该插件或 Runtime 设为核心依赖。
 
 ### 3.2 calesthio/OpenMontage
 

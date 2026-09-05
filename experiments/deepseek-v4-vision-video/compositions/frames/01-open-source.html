@@ -1,0 +1,530 @@
+<template>
+  <style>
+    #root {
+      position: relative;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      container-type: size;
+    }
+
+    #root * {
+      box-sizing: border-box;
+    }
+
+    [id="01-open-source-ground"] {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #06111c;
+    }
+
+    [id="01-open-source-content"] {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      color: #e9f4f7;
+      font-family: sans-serif;
+    }
+
+    [id="01-open-source-grid"] {
+      position: absolute;
+      inset: 92px 56px 330px;
+      width: 968px;
+      height: 1498px;
+      opacity: 0.2;
+    }
+
+    [id="01-open-source-grid"] line {
+      stroke: #39d7ce;
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+
+    [id="01-open-source-axis-x"],
+    [id="01-open-source-axis-y"] {
+      position: absolute;
+      z-index: 2;
+      color: #7d9aa8;
+      font-family: monospace;
+      font-size: 18px;
+      font-weight: 500;
+      line-height: 1;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    [id="01-open-source-axis-x"] {
+      top: 114px;
+      left: 70px;
+    }
+
+    [id="01-open-source-axis-y"] {
+      top: 116px;
+      right: 70px;
+      writing-mode: vertical-rl;
+    }
+
+    [id="01-open-source-api"],
+    [id="01-open-source-slices"],
+    [id="01-open-source-word-slot"],
+    [id="01-open-source-final"] {
+      position: absolute;
+      left: 62px;
+      top: 360px;
+      z-index: 6;
+      width: 956px;
+      height: 600px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+    }
+
+    [id="01-open-source-api-text"],
+    [class~="01-open-source-slice"] {
+      width: 100%;
+      color: #e9f4f7;
+      font-size: 230px;
+      font-weight: 900;
+      line-height: 0.84;
+      letter-spacing: -0.055em;
+      text-transform: lowercase;
+    }
+
+    [id="01-open-source-api-text"] span,
+    [class~="01-open-source-slice"] span {
+      display: block;
+    }
+
+    [id="01-open-source-slices"] {
+      z-index: 8;
+    }
+
+    [class~="01-open-source-slice"] {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      will-change: transform;
+    }
+
+    [id="01-open-source-cut"] {
+      position: absolute;
+      left: 70px;
+      top: 662px;
+      z-index: 10;
+      width: 940px;
+      height: 7px;
+      background: #39d7ce;
+      transform-origin: 50% 50%;
+    }
+
+    [id="01-open-source-cut"]::before,
+    [id="01-open-source-cut"]::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background: #39d7ce;
+      opacity: 0.45;
+    }
+
+    [id="01-open-source-cut"]::before {
+      top: -16px;
+    }
+
+    [id="01-open-source-cut"]::after {
+      bottom: -16px;
+    }
+
+    [id="01-open-source-word-slot"] {
+      z-index: 7;
+    }
+
+    [id="01-open-source-vision"],
+    [id="01-open-source-agent"] {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #e9f4f7;
+      font-size: 210px;
+      font-weight: 900;
+      line-height: 0.88;
+      letter-spacing: -0.05em;
+      text-transform: lowercase;
+    }
+
+    [id="01-open-source-repo-map"] {
+      position: absolute;
+      left: 74px;
+      top: 186px;
+      z-index: 3;
+      width: 932px;
+      height: 1300px;
+      overflow: visible;
+    }
+
+    [id="01-open-source-repo-map"] path,
+    [id="01-open-source-repo-map"] line {
+      fill: none;
+      stroke: #39d7ce;
+      stroke-width: 2;
+      vector-effect: non-scaling-stroke;
+    }
+
+    [id="01-open-source-repo-map"] circle {
+      fill: #06111c;
+      stroke: #39d7ce;
+      stroke-width: 2;
+      vector-effect: non-scaling-stroke;
+    }
+
+    [id="01-open-source-door"] {
+      position: absolute;
+      left: 78px;
+      top: 278px;
+      z-index: 5;
+      width: 924px;
+      height: 1180px;
+      overflow: visible;
+    }
+
+    [id="01-open-source-door-path"] {
+      fill: none;
+      stroke: #39d7ce;
+      stroke-width: 7;
+      stroke-linecap: square;
+      stroke-linejoin: miter;
+      vector-effect: non-scaling-stroke;
+    }
+
+    [id="01-open-source-bloom"] {
+      position: absolute;
+      left: 190px;
+      top: 452px;
+      z-index: 4;
+      width: 700px;
+      height: 700px;
+      border: 44px solid rgba(57, 215, 206, 0.24);
+      opacity: 0;
+    }
+
+    [id="01-open-source-final"] {
+      top: 440px;
+      z-index: 9;
+      height: 700px;
+      align-content: center;
+    }
+
+    [id="01-open-source-open"],
+    [id="01-open-source-source"] {
+      display: block;
+      width: 100%;
+      color: #e9f4f7;
+      font-size: 226px;
+      font-weight: 900;
+      line-height: 0.83;
+      letter-spacing: -0.055em;
+      text-transform: lowercase;
+    }
+
+    [id="01-open-source-source"] {
+      color: #39d7ce;
+    }
+
+    [id="01-open-source-lock-rule"] {
+      width: 380px;
+      height: 3px;
+      margin: 72px auto 0;
+      background: #39d7ce;
+      transform-origin: 0 50%;
+    }
+
+    [id="01-open-source-model-node"] {
+      position: absolute;
+      left: 511px;
+      top: 1270px;
+      z-index: 8;
+      width: 58px;
+      height: 58px;
+      border: 7px solid #39d7ce;
+      background: #06111c;
+    }
+
+    [id="01-open-source-node-pulse"] {
+      position: absolute;
+      left: 487px;
+      top: 1246px;
+      z-index: 7;
+      width: 106px;
+      height: 106px;
+      border: 4px solid #39d7ce;
+    }
+
+    [id="01-open-source-repo-tag"] {
+      position: absolute;
+      left: 70px;
+      top: 1496px;
+      z-index: 8;
+      color: #39d7ce;
+      font-family: monospace;
+      font-size: 20px;
+      font-weight: 500;
+      line-height: 1;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    [id="01-open-source-caption-boundary"] {
+      position: absolute;
+      left: 70px;
+      top: 1556px;
+      width: 940px;
+      height: 1px;
+      background: rgba(57, 215, 206, 0.22);
+    }
+  </style>
+
+  <div data-hf-id="hf-x570" id="root" data-composition-id="01-open-source" data-width="1080" data-height="1920" data-duration="7">
+    <div data-hf-id="hf-h5pp" id="01-open-source-ground" class="clip" data-start="0" data-duration="7" data-track-index="0">
+      <svg data-hf-id="hf-6z86" id="01-open-source-grid" viewBox="0 0 968 1498" aria-hidden="true">
+        <line data-hf-id="hf-h9dg" x1="0" y1="0" x2="0" y2="1498" />
+        <line data-hf-id="hf-g1ng" x1="121" y1="0" x2="121" y2="1498" />
+        <line data-hf-id="hf-pue4" x1="242" y1="0" x2="242" y2="1498" />
+        <line data-hf-id="hf-oau4" x1="363" y1="0" x2="363" y2="1498" />
+        <line data-hf-id="hf-a07w" x1="484" y1="0" x2="484" y2="1498" />
+        <line data-hf-id="hf-ee7e" x1="605" y1="0" x2="605" y2="1498" />
+        <line data-hf-id="hf-l6ii" x1="726" y1="0" x2="726" y2="1498" />
+        <line data-hf-id="hf-hlpu" x1="847" y1="0" x2="847" y2="1498" />
+        <line data-hf-id="hf-am8i" x1="968" y1="0" x2="968" y2="1498" />
+        <line data-hf-id="hf-ylh7" x1="0" y1="0" x2="968" y2="0" />
+        <line data-hf-id="hf-ml2f" x1="0" y1="125" x2="968" y2="125" />
+        <line data-hf-id="hf-hnq5" x1="0" y1="250" x2="968" y2="250" />
+        <line data-hf-id="hf-wc05" x1="0" y1="375" x2="968" y2="375" />
+        <line data-hf-id="hf-29mh" x1="0" y1="500" x2="968" y2="500" />
+        <line data-hf-id="hf-3yi5" x1="0" y1="625" x2="968" y2="625" />
+        <line data-hf-id="hf-harr" x1="0" y1="750" x2="968" y2="750" />
+        <line data-hf-id="hf-wrmf" x1="0" y1="875" x2="968" y2="875" />
+        <line data-hf-id="hf-6fub" x1="0" y1="1000" x2="968" y2="1000" />
+        <line data-hf-id="hf-5gev" x1="0" y1="1125" x2="968" y2="1125" />
+        <line data-hf-id="hf-1td7" x1="0" y1="1250" x2="968" y2="1250" />
+        <line data-hf-id="hf-6b73" x1="0" y1="1375" x2="968" y2="1375" />
+        <line data-hf-id="hf-4ylj" x1="0" y1="1498" x2="968" y2="1498" />
+      </svg>
+    </div>
+
+    <div data-hf-id="hf-63ju" id="01-open-source-content" class="clip" data-start="0" data-duration="7" data-track-index="1">
+      <div data-hf-id="hf-9z4u" id="01-open-source-axis-x">x / vector</div>
+      <div data-hf-id="hf-fpfu" id="01-open-source-axis-y">y / path</div>
+
+      <div data-hf-id="hf-hhjm" id="01-open-source-api">
+        <div data-hf-id="hf-y1ue" id="01-open-source-api-text"><span data-hf-id="hf-mpvf">api</span><span data-hf-id="hf-finv">only</span></div>
+      </div>
+
+      <div data-hf-id="hf-4pye" id="01-open-source-slices" aria-hidden="true">
+        <div data-hf-id="hf-yjob" class="01-open-source-slice" data-slice="0"><div data-hf-id="hf-yeow"><span data-hf-id="hf-un23">api</span><span data-hf-id="hf-hkhn">only</span></div></div>
+        <div data-hf-id="hf-ulka" class="01-open-source-slice" data-slice="1"><div data-hf-id="hf-y7yw"><span data-hf-id="hf-u8r2">api</span><span data-hf-id="hf-h66m">only</span></div></div>
+        <div data-hf-id="hf-ofuh" class="01-open-source-slice" data-slice="2"><div data-hf-id="hf-x11t"><span data-hf-id="hf-tug1">api</span><span data-hf-id="hf-grvl">only</span></div></div>
+        <div data-hf-id="hf-no6o" class="01-open-source-slice" data-slice="3"><div data-hf-id="hf-xfcu"><span data-hf-id="hf-tg50">api</span><span data-hf-id="hf-gdkk">only</span></div></div>
+        <div data-hf-id="hf-jq2n" class="01-open-source-slice" data-slice="4"><div data-hf-id="hf-w8fr"><span data-hf-id="hf-t1tz">api</span><span data-hf-id="hf-fz9j">only</span></div></div>
+        <div data-hf-id="hf-frym" class="01-open-source-slice" data-slice="5"><div data-hf-id="hf-wmqs"><span data-hf-id="hf-sniy">api</span><span data-hf-id="hf-fkyi">only</span></div></div>
+      </div>
+
+      <div data-hf-id="hf-fxg5" id="01-open-source-cut" aria-hidden="true"></div>
+
+      <div data-hf-id="hf-aeaf" id="01-open-source-word-slot">
+        <div data-hf-id="hf-0t9i" id="01-open-source-vision">vision</div>
+        <div data-hf-id="hf-0p5y" id="01-open-source-agent">agent</div>
+      </div>
+
+      <svg data-hf-id="hf-amie" id="01-open-source-repo-map" viewBox="0 0 932 1300" aria-hidden="true">
+        <path data-hf-id="hf-g4mq" id="01-open-source-path-a" pathLength="1" d="M82 1040V760H280V552H466V344H728" />
+        <path data-hf-id="hf-ffex" id="01-open-source-path-b" pathLength="1" d="M178 1134H360V930H602V710H836V430" />
+        <path data-hf-id="hf-19cw" id="01-open-source-path-c" pathLength="1" d="M94 262H310V418H520V582H820" />
+        <line data-hf-id="hf-5i1t" x1="466" y1="344" x2="466" y2="930" />
+        <circle data-hf-id="hf-jzlm" cx="82" cy="1040" r="10" />
+        <circle data-hf-id="hf-tq25" cx="280" cy="552" r="10" />
+        <circle data-hf-id="hf-9i2y" cx="466" cy="344" r="10" />
+        <circle data-hf-id="hf-xj2b" cx="602" cy="710" r="10" />
+        <circle data-hf-id="hf-75nj" cx="836" cy="430" r="10" />
+        <circle data-hf-id="hf-c8cx" cx="520" cy="582" r="10" />
+      </svg>
+
+      <svg data-hf-id="hf-1rt0" id="01-open-source-door" viewBox="0 0 924 1180" aria-hidden="true">
+        <path data-hf-id="hf-ud3g" id="01-open-source-door-path" pathLength="1" d="M46 1138V242L196 72H728L878 242V1138H46Z" />
+      </svg>
+
+      <div data-hf-id="hf-imyw" id="01-open-source-bloom" aria-hidden="true"></div>
+
+      <div data-hf-id="hf-ic76" id="01-open-source-final">
+        <span data-hf-id="hf-r5x9" id="01-open-source-open" class="01-open-source-word">open</span>
+        <span data-hf-id="hf-t3vf" id="01-open-source-source" class="01-open-source-word">source</span>
+        <div data-hf-id="hf-99el" id="01-open-source-lock-rule" aria-hidden="true"></div>
+      </div>
+
+      <div data-hf-id="hf-cshb" id="01-open-source-node-pulse" aria-hidden="true"></div>
+      <div data-hf-id="hf-pl57" id="01-open-source-model-node" aria-hidden="true"></div>
+      <div data-hf-id="hf-huxk" id="01-open-source-repo-tag">repo / model weights</div>
+      <div data-hf-id="hf-09mm" id="01-open-source-caption-boundary" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const tl = gsap.timeline({ paused: true });
+      const byId = (id) => document.getElementById(id);
+      const PULSE = 0.5;
+      const BEATS = [PULSE * 0.2, PULSE * 3, PULSE * 6, PULSE * 9, PULSE * 10];
+      const api = byId("01-open-source-api");
+      const cut = byId("01-open-source-cut");
+      const vision = byId("01-open-source-vision");
+      const agent = byId("01-open-source-agent");
+      const wordSlot = byId("01-open-source-word-slot");
+      const doorPath = byId("01-open-source-door-path");
+      const finalGroup = byId("01-open-source-final");
+      const openWord = byId("01-open-source-open");
+      const sourceWord = byId("01-open-source-source");
+      const lockRule = byId("01-open-source-lock-rule");
+      const bloom = byId("01-open-source-bloom");
+      const modelNode = byId("01-open-source-model-node");
+      const nodePulse = byId("01-open-source-node-pulse");
+      const repoTag = byId("01-open-source-repo-tag");
+      const repoMap = byId("01-open-source-repo-map");
+      const slices = Array.from(document.querySelectorAll("[data-slice]"));
+      const repoPaths = [
+        byId("01-open-source-path-a"),
+        byId("01-open-source-path-b"),
+        byId("01-open-source-path-c"),
+      ];
+      const glitchHash = (n) => {
+        const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+        return x - Math.floor(x);
+      };
+
+      tl.set([cut, vision, agent, finalGroup, bloom, modelNode, nodePulse, repoTag, repoMap], { opacity: 0 }, 0);
+      tl.set(repoPaths, { strokeDasharray: 1, strokeDashoffset: 1, opacity: 0.42 }, 0);
+      tl.set(doorPath, { strokeDasharray: 1, strokeDashoffset: 1, opacity: 0 }, 0);
+      tl.set(lockRule, { scaleX: 0 }, 0);
+
+      slices.forEach((slice, index) => {
+        const bandHeight = 100 / slices.length;
+        tl.set(
+          slice,
+          {
+            clipPath: `inset(${index * bandHeight}% 0 ${100 - (index + 1) * bandHeight}% 0)`,
+            opacity: 0,
+          },
+          0,
+        );
+      });
+
+      tl.fromTo(
+        api,
+        { y: -470, scale: 1.12, filter: "blur(12px)", opacity: 0 },
+        { y: 0, scale: 1, filter: "blur(0px)", opacity: 1, duration: 0.5, ease: "power4.out" },
+        BEATS[0],
+      );
+
+      tl.fromTo(
+        cut,
+        { scaleX: 0, opacity: 0 },
+        { scaleX: 1, opacity: 1, duration: 0.18, ease: "expo.out" },
+        BEATS[1],
+      );
+      tl.set(api, { opacity: 0 }, BEATS[1] + 0.02);
+      slices.forEach((slice, index) => {
+        const direction = glitchHash(index * 3 + 1) > 0.5 ? 1 : -1;
+        const offset = direction * (18 + glitchHash(index * 5 + 2) * 42);
+        tl.fromTo(
+          slice,
+          { x: offset, scaleX: 1 + glitchHash(index * 7 + 3) * 0.26, opacity: 1 },
+          { x: 0, scaleX: 1, opacity: 1, duration: 0.28, ease: "steps(4)" },
+          BEATS[1] + glitchHash(index * 11 + 4) * 0.055,
+        );
+      });
+      tl.set(slices, { x: 0, scaleX: 1, opacity: 0 }, BEATS[1] + 0.34);
+      tl.set(vision, { opacity: 1 }, BEATS[1] + 0.34);
+      tl.fromTo(
+        repoMap,
+        { opacity: 0 },
+        { opacity: 1, duration: 0.34, ease: "power2.out" },
+        BEATS[1] + 0.28,
+      );
+
+      repoPaths.forEach((path, index) => {
+        tl.fromTo(
+          path,
+          { strokeDashoffset: 1, opacity: 0.18 },
+          { strokeDashoffset: 0, opacity: 0.55, duration: 0.8, ease: "power2.out" },
+          BEATS[1] + 0.38 + index * PULSE * 0.72,
+        );
+      });
+
+      tl.set(vision, { opacity: 0 }, BEATS[2]);
+      tl.set(agent, { opacity: 1 }, BEATS[2]);
+      tl.fromTo(
+        cut,
+        { scaleX: 1, opacity: 1 },
+        { scaleX: 0.82, y: -300, opacity: 0.72, duration: 0.32, ease: "power4.inOut" },
+        BEATS[3] - 0.28,
+      );
+      tl.to(wordSlot, { x: -230, opacity: 0, duration: 0.3, ease: "power4.in" }, BEATS[3] - 0.3);
+
+      tl.fromTo(
+        doorPath,
+        { strokeDashoffset: 1, opacity: 0.15 },
+        { strokeDashoffset: 0, opacity: 1, duration: 0.72, ease: "power4.out" },
+        BEATS[3],
+      );
+      tl.fromTo(
+        finalGroup,
+        { x: 230, opacity: 0.35 },
+        { x: 0, opacity: 1, duration: 0.42, ease: "power4.out" },
+        BEATS[3],
+      );
+      tl.fromTo(
+        openWord,
+        { x: -210, filter: "blur(10px)", opacity: 0 },
+        { x: 0, filter: "blur(0px)", opacity: 1, duration: 0.5, ease: "expo.out" },
+        BEATS[3] + 0.08,
+      );
+      tl.fromTo(
+        sourceWord,
+        { y: 90, rotation: 6, opacity: 0 },
+        { y: 0, rotation: 0, opacity: 1, duration: 0.55, ease: "circ.out" },
+        BEATS[4],
+      );
+      tl.to(lockRule, { scaleX: 1, duration: 0.48, ease: "power3.out" }, BEATS[4] + 0.26);
+
+      tl.fromTo(
+        bloom,
+        { opacity: 0, scale: 0.8 },
+        { opacity: 0.28, scale: 1.06, duration: 0.45, ease: "power2.out" },
+        BEATS[4] + 0.18,
+      );
+      tl.to(bloom, { opacity: 0.12, scale: 1, duration: 0.42, ease: "power2.out" }, BEATS[4] + 0.63);
+      tl.fromTo(
+        modelNode,
+        { scale: 0, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 0.48, ease: "back.out(2)" },
+        BEATS[4] + 0.28,
+      );
+      tl.fromTo(
+        nodePulse,
+        { scale: 0.4, opacity: 0.72 },
+        { scale: 1.85, opacity: 0, duration: 0.86, ease: "power2.out" },
+        BEATS[4] + 0.35,
+      );
+      tl.fromTo(
+        repoTag,
+        { y: 28, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.45, ease: "circ.out" },
+        BEATS[4] + 0.62,
+      );
+
+      window.__timelines["01-open-source"] = tl;
+    })();
+  </script>
+</template>

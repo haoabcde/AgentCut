@@ -1,0 +1,206 @@
+{
+  "schemaVersion": "1.0",
+  "project": {
+    "id": "project_p1_real_dogfood",
+    "revision": 4,
+    "sourceSha256": "sha256:88a47f3d9c40d0dd3dbd25332848ed19380f477f87535dba4f370cd2b613fd21",
+    "transcriptId": "transcript_5b73ce5407fa4bc39d4d68c1"
+  },
+  "review": {
+    "projectCompleted": false,
+    "pendingCandidateIds": [
+      "candidate_9c9fec13c0d39e4bb83d0b32",
+      "candidate_b4b8cf7c53b0d346e5460722",
+      "candidate_ac4639102bc27d9e560b70e0",
+      "candidate_f6d8252d1481537191333aba",
+      "candidate_a93a80209bedad9f22ca0dea",
+      "candidate_88da1709b867c340d8f64233",
+      "candidate_f47996566dbecdecb5c7a16b",
+      "candidate_676660573a1474e058501e21",
+      "candidate_61e507d9bd7d14b23883b30f",
+      "candidate_5c6328429439bfcac5611695",
+      "candidate_0e5c8a3fe1b1d46fa68e7d47",
+      "candidate_01d469c608c94758401dc68c",
+      "candidate_763c5de78a50dd87f0917e8e",
+      "candidate_b9b002d2321bf1f112f43ccd"
+    ]
+  },
+  "candidates": [
+    {
+      "candidateId": "candidate_9c9fec13c0d39e4bb83d0b32",
+      "decision": "suggest_remove",
+      "risk": "medium",
+      "state": "candidate_remove",
+      "label": null
+    },
+    {
+      "candidateId": "candidate_b4b8cf7c53b0d346e5460722",
+      "decision": "suggest_remove",
+      "risk": "medium",
+      "state": "candidate_remove",
+      "label": null
+    },
+    {
+      "candidateId": "candidate_ac4639102bc27d9e560b70e0",
+      "decision": "suggest_remove",
+      "risk": "medium",
+      "state": "candidate_remove",
+      "label": null
+    },
+    {
+      "candidateId": "candidate_f6d8252d1481537191333aba",
+      "decision": "definite_remove",
+      "risk": "low",
+      "state": "candidate_remove",
+      "label": null
+    },
+    {
+      "candidateId": "candidate_a93a80209bedad9f22ca0dea",
+      "decision": "suggest_remove",
+      "risk": "medium",
+      "state": "candidate_remove",
+      "label": null
+    },
+    {
+      "candidateId": "candidate_88da1709b867c340d8f64233",
+      "decision": "definite_remove",
+      "risk": "low",
+      "state": "candidate_remove",
+      "label": null
+    },
+    {
+      "candidateId": "candidate_f47996566dbecdecb5c7a16b",
+      "decision": "suggest_remove",
+      "risk": "medium",
+      "state": "candidate_remove",
+      "label": null
+    },
+    {
+      "candidateId": "candidate_676660573a1474e058501e21",
+      "decision": "suggest_remove",
+      "risk": "medium",
+      "state": "candidate_remove",
+      "label": null
+    },
+    {
+      "candidateId": "candidate_61e507d9bd7d14b23883b30f",
+      "decision": "suggest_remove",
+      "risk": "medium",
+      "state": "candidate_remove",
+      "label": null
+    },
+    {
+      "candidateId": "candidate_5c6328429439bfcac5611695",
+      "decision": "suggest_remove",
+      "risk": "medium",
+      "state": "candidate_remove",
+      "label": null
+    },
+    {
+      "candidateId": "candidate_0e5c8a3fe1b1d46fa68e7d47",
+      "decision": "definite_remove",
+      "risk": "low",
+      "state": "candidate_remove",
+      "label": null
+    },
+    {
+      "candidateId": "candidate_01d469c608c94758401dc68c",
+      "decision": "definite_remove",
+      "risk": "low",
+      "state": "candidate_remove",
+      "label": null
+    },
+    {
+      "candidateId": "candidate_763c5de78a50dd87f0917e8e",
+      "decision": "suggest_remove",
+      "risk": "medium",
+      "state": "candidate_remove",
+      "label": null
+    },
+    {
+      "candidateId": "candidate_b9b002d2321bf1f112f43ccd",
+      "decision": "suggest_remove",
+      "risk": "high",
+      "state": "candidate_remove",
+      "label": null
+    }
+  ],
+  "boundaries": [],
+  "derived": {
+    "highRiskAutoDeletedCandidateIds": []
+  },
+  "export": null,
+  "progress": {
+    "candidateLabeled": 0,
+    "candidateTotal": 14,
+    "boundaryLabeled": 0,
+    "boundaryTotal": 0,
+    "complete": false
+  },
+  "events": [
+    {
+      "sequence": 1,
+      "requestId": "correctness-sample-02-r4-v1",
+      "projectId": "project_p1_real_dogfood",
+      "projectRevision": 4,
+      "sourceSha256": "sha256:88a47f3d9c40d0dd3dbd25332848ed19380f477f87535dba4f370cd2b613fd21",
+      "targetType": "correctness",
+      "targetId": "correctness-sample-02-r4-v1",
+      "candidateLabel": null,
+      "boundaryUsable": null,
+      "boundaryIssueCodes": [],
+      "correctnessResult": {
+        "sourceStateHash": "sha256:6a936a28aa3a66c16954ff1275cdc554b764c4607422193fdabf1c3e1e18974e",
+        "checks": {
+          "undo": {
+            "passed": true,
+            "code": "DOMAIN_STATE_RESTORED",
+            "details": {
+              "domainStateRestored": true,
+              "expectedRevision": 6,
+              "observedRevision": 6,
+              "replayVerified": true
+            }
+          },
+          "restart": {
+            "passed": true,
+            "code": "STATE_REOPEN_MATCH",
+            "details": {
+              "expectedRevision": 5,
+              "observedRevision": 5,
+              "stateHashMatch": true,
+              "replayVerified": true
+            }
+          },
+          "idempotency": {
+            "passed": true,
+            "code": "IDEMPOTENT_REPLAY",
+            "details": {
+              "idempotentReplay": true,
+              "revisionBefore": 5,
+              "revisionAfter": 5,
+              "stateUnchanged": true
+            }
+          },
+          "revisionConflict": {
+            "passed": true,
+            "code": "REVISION_CONFLICT_REJECTED",
+            "details": {
+              "observedCode": "REVISION_CONFLICT",
+              "revisionUnchanged": true,
+              "stateUnchanged": true,
+              "commandCountUnchanged": true
+            }
+          }
+        }
+      },
+      "createdAt": "2026-07-30T19:12:17.817Z",
+      "payloadHash": "e226cfac2817557e891caa65f4b58ed35ef1f66c8d82b24953d69fb923a56326",
+      "noteSha256": null
+    }
+  ],
+  "integrity": {
+    "algorithm": "sha256",
+    "payloadSha256": "sha256:c6060de84eee901f0498d1da3dcef89439efd5526b31d2241824227ac3197cc9"
+  }
+}

@@ -1,5 +1,7 @@
 # 实施路线图
 
+> 本文件保留完整产品阶段地图。当前实际执行以[可信中文口播 Alpha 长程执行计划](./13-long-term-execution-plan.md)为准；未通过 Alpha Gate 前，不提前启动后续版本范围。
+
 ## 1. 路线原则
 
 - 先证明 IR/command/recovery/preview parity，再做漂亮 UI。

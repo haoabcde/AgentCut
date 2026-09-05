@@ -11,7 +11,7 @@
     "assets": { "type": "array", "items": { "$ref": "#/$defs/asset" } },
     "sequences": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/sequence" } },
     "styleSpecs": { "type": "array", "items": { "type": "object" } },
-    "artifacts": { "type": "array", "items": { "type": "object" } },
+    "artifacts": { "type": "array", "items": { "$ref": "#/$defs/artifact" } },
     "exportPresets": { "type": "array", "items": { "type": "object" } },
     "versions": { "type": "array", "items": { "type": "object" } },
     "history": { "$ref": "#/$defs/history" },
@@ -95,6 +95,280 @@
         "metadata": { "type": "object" }
       }
     },
+    "transcriptWord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "text", "sourceRange", "confidence"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "text": { "type": "string", "minLength": 1 },
+        "normalizedText": { "type": "string", "minLength": 1 },
+        "sourceRange": { "$ref": "#/$defs/timeRange" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "speakerId": { "$ref": "#/$defs/id" }
+      }
+    },
+    "deletionTarget": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "wordIds", "sourceRange"],
+          "properties": {
+            "kind": { "const": "words" },
+            "wordIds": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/id" }
+            },
+            "sourceRange": { "$ref": "#/$defs/timeRange" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "sourceRange"],
+          "properties": {
+            "kind": { "const": "gap" },
+            "sourceRange": { "$ref": "#/$defs/timeRange" },
+            "previousWordId": { "$ref": "#/$defs/id" },
+            "nextWordId": { "$ref": "#/$defs/id" }
+          },
+          "anyOf": [
+            { "required": ["previousWordId"] },
+            { "required": ["nextWordId"] }
+          ]
+        }
+      ]
+    },
+    "deletionCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "target", "reasonCodes", "decision", "risk", "confidence", "explanationZh"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "target": { "$ref": "#/$defs/deletionTarget" },
+        "reasonCodes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["silence", "filler", "stutter", "repetition", "false_start", "restatement", "correction", "incomplete", "manual"]
+          }
+        },
+        "decision": { "enum": ["definite_remove", "suggest_remove", "suggest_keep"] },
+        "risk": { "enum": ["low", "medium", "high"] },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "explanationZh": { "type": "string", "minLength": 1 },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["role", "target"],
+            "properties": {
+              "role": { "const": "retained_comparison" },
+              "target": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["kind", "wordIds", "sourceRange"],
+                "properties": {
+                  "kind": { "const": "words" },
+                  "wordIds": {
+                    "type": "array",
+                    "minItems": 1,
+                    "uniqueItems": true,
+                    "items": { "$ref": "#/$defs/id" }
+                  },
+                  "sourceRange": { "$ref": "#/$defs/timeRange" }
+                }
+              }
+            }
+          }
+        },
+        "alternatives": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["label", "target"],
+            "properties": {
+              "label": { "type": "string", "minLength": 1 },
+              "target": { "$ref": "#/$defs/deletionTarget" }
+            }
+          }
+        }
+      }
+    },
+    "transcriptArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "assetId", "language", "audioStreamIndex", "words", "provenance"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "const": "transcript" },
+        "assetId": { "$ref": "#/$defs/id" },
+        "language": { "type": "string", "minLength": 2 },
+        "audioStreamIndex": { "type": "integer", "minimum": 0 },
+        "providerArtifactId": { "$ref": "#/$defs/id" },
+        "words": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/transcriptWord" }
+        },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "asrProviderArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "assetId", "audioStreamIndex", "provider", "model", "providerVersion", "payloadHash", "uri", "provenance"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "const": "asrProviderResult" },
+        "assetId": { "$ref": "#/$defs/id" },
+        "audioStreamIndex": { "type": "integer", "minimum": 0 },
+        "provider": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "providerVersion": { "type": "string", "minLength": 1 },
+        "payloadHash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "uri": { "type": "string", "minLength": 1 },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "candidateSetArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "transcriptArtifactId", "sequenceId", "clipId", "projectRevision", "detectorVersion", "candidates", "provenance"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "const": "deletionCandidateSet" },
+        "transcriptArtifactId": { "$ref": "#/$defs/id" },
+        "sequenceId": { "$ref": "#/$defs/id" },
+        "clipId": { "$ref": "#/$defs/id" },
+        "projectRevision": { "type": "integer", "minimum": 0 },
+        "detectorVersion": { "type": "string", "minLength": 1 },
+        "evidenceContracts": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["retained-comparison-v1"] }
+        },
+        "candidates": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/deletionCandidate" }
+        },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "editProposalArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "candidateSetArtifactId", "projectRevision", "selectedCandidateIds", "estimatedRemovedDuration", "payloadHash", "provenance"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "const": "editProposal" },
+        "candidateSetArtifactId": { "$ref": "#/$defs/id" },
+        "projectRevision": { "type": "integer", "minimum": 0 },
+        "selectedCandidateIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "estimatedRemovedDuration": { "$ref": "#/$defs/time" },
+        "payloadHash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "captionCue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "text", "wordIds", "timelineRange"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "text": { "type": "string", "minLength": 1 },
+        "wordIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "timelineRange": { "$ref": "#/$defs/timeRange" }
+      }
+    },
+    "captionDocumentArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "transcriptArtifactId", "sequenceId", "projectRevision", "language", "format", "uri", "contentHash", "cues", "provenance"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "const": "captionDocument" },
+        "transcriptArtifactId": { "$ref": "#/$defs/id" },
+        "sequenceId": { "$ref": "#/$defs/id" },
+        "projectRevision": { "type": "integer", "minimum": 0 },
+        "language": { "type": "string", "minLength": 1 },
+        "format": { "const": "srt" },
+        "uri": { "type": "string", "minLength": 1 },
+        "contentHash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "cues": { "type": "array", "items": { "$ref": "#/$defs/captionCue" } },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "renderQuality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["timelineDuration", "outputDuration", "durationDeltaMillis", "width", "height", "hasAudio", "subtitleCueCount", "passed"],
+      "properties": {
+        "timelineDuration": { "$ref": "#/$defs/time" },
+        "outputDuration": { "$ref": "#/$defs/time" },
+        "expectedOutputMicros": { "type": "integer", "minimum": 0 },
+        "durationDeltaMillis": { "type": "number", "minimum": 0 },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "hasAudio": { "type": "boolean" },
+        "subtitleCueCount": { "type": "integer", "minimum": 0 },
+        "passed": { "type": "boolean" },
+        "fitMode": { "enum": ["contain", "cover"] },
+        "fitModeApproximate": { "type": "boolean" },
+        "colorApproximate": { "type": "boolean" }
+      }
+    },
+    "renderReportArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "sequenceId", "projectRevision", "outputAssetId", "renderer", "rendererVersion", "planHash", "duration", "fileSizeBytes", "videoCodec", "audioCodec", "quality", "warnings", "provenance"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "const": "renderReport" },
+        "sequenceId": { "$ref": "#/$defs/id" },
+        "projectRevision": { "type": "integer", "minimum": 0 },
+        "outputAssetId": { "$ref": "#/$defs/id" },
+        "captionArtifactId": { "$ref": "#/$defs/id" },
+        "renderer": { "const": "ffmpeg" },
+        "rendererVersion": { "type": "string", "minLength": 1 },
+        "planHash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "duration": { "$ref": "#/$defs/time" },
+        "fileSizeBytes": { "type": "integer", "minimum": 1 },
+        "videoCodec": { "type": "string", "minLength": 1 },
+        "audioCodec": { "type": "string", "minLength": 1 },
+        "quality": { "$ref": "#/$defs/renderQuality" },
+        "warnings": { "type": "array", "items": { "type": "string" } },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "artifact": {
+      "oneOf": [
+        { "$ref": "#/$defs/asrProviderArtifact" },
+        { "$ref": "#/$defs/transcriptArtifact" },
+        { "$ref": "#/$defs/candidateSetArtifact" },
+        { "$ref": "#/$defs/editProposalArtifact" },
+        { "$ref": "#/$defs/captionDocumentArtifact" },
+        { "$ref": "#/$defs/renderReportArtifact" }
+      ]
+    },
     "clip": {
       "type": "object",
       "additionalProperties": false,
@@ -175,6 +449,16 @@
                 "kind": { "const": "range" },
                 "range": { "$ref": "#/$defs/timeRange" },
                 "trackIds": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "assetId", "range"],
+              "properties": {
+                "kind": { "const": "source_range" },
+                "assetId": { "$ref": "#/$defs/id" },
+                "range": { "$ref": "#/$defs/timeRange" }
               }
             },
             {

@@ -1,0 +1,484 @@
+<template>
+  <style>
+    #root {
+      position: relative;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      container-type: size;
+      color: #e9f4f7;
+    }
+
+    .frame-02-repository-ground,
+    .frame-02-repository-stage {
+      position: absolute;
+      inset: 0;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+    }
+
+    .frame-02-repository-ground {
+      background: #06111c;
+    }
+
+    .frame-02-repository-grid {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.42;
+    }
+
+    .frame-02-repository-stage {
+      font-family: sans-serif;
+    }
+
+    .frame-02-repository-top-rule {
+      position: absolute;
+      top: 72px;
+      left: 60px;
+      width: 960px;
+      height: 1px;
+      background: #262828;
+    }
+
+    .frame-02-repository-kicker,
+    .frame-02-repository-catalogue,
+    .frame-02-repository-index,
+    .frame-02-repository-row-meta,
+    .frame-02-repository-scale-copy,
+    .frame-02-repository-directory-copy {
+      font-family: monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    .frame-02-repository-kicker {
+      position: absolute;
+      top: 103px;
+      left: 60px;
+      font-size: 19px;
+      line-height: 1;
+      color: #39d7ce;
+    }
+
+    .frame-02-repository-catalogue {
+      position: absolute;
+      top: 103px;
+      right: 60px;
+      font-size: 19px;
+      line-height: 1;
+      color: #7d9aa8;
+      text-align: right;
+    }
+
+    .frame-02-repository-title {
+      position: absolute;
+      top: 174px;
+      left: 60px;
+      width: 720px;
+      perspective: 720px;
+      font-family: monospace;
+      font-size: 61px;
+      font-weight: 700;
+      line-height: 0.98;
+      letter-spacing: -0.04em;
+      color: #e9f4f7;
+    }
+
+    .frame-02-repository-title-line {
+      display: block;
+      white-space: nowrap;
+      transform-style: preserve-3d;
+    }
+
+    .frame-02-repository-title-line + .frame-02-repository-title-line {
+      margin-top: 17px;
+      color: #39d7ce;
+    }
+
+    .frame-02-repository-char {
+      display: inline-block;
+      min-width: 0.59em;
+      transform-origin: 50% 50%;
+      will-change: transform, opacity;
+    }
+
+    .frame-02-repository-char-space {
+      min-width: 0.36em;
+    }
+
+    .frame-02-repository-directory {
+      position: absolute;
+      top: 168px;
+      right: 60px;
+      width: 210px;
+      height: 210px;
+      border-left: 1px solid #262828;
+      padding-left: 26px;
+      box-sizing: border-box;
+    }
+
+    .frame-02-repository-directory-copy {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      column-gap: 12px;
+      align-items: center;
+      height: 42px;
+      border-top: 1px solid #262828;
+      font-size: 13px;
+      color: #485050;
+    }
+
+    .frame-02-repository-directory-copy strong {
+      color: #7d9aa8;
+      font-weight: 500;
+    }
+
+    .frame-02-repository-list {
+      position: absolute;
+      top: 490px;
+      left: 60px;
+      width: 960px;
+      height: 824px;
+    }
+
+    .frame-02-repository-row {
+      position: absolute;
+      left: 0;
+      width: 960px;
+      height: 176px;
+      border-top: 1px solid #485050;
+      box-sizing: border-box;
+      will-change: transform, opacity;
+    }
+
+    .frame-02-repository-row[data-slot="1"] { top: 0; }
+    .frame-02-repository-row[data-slot="2"] { top: 202px; }
+    .frame-02-repository-row[data-slot="3"] { top: 404px; }
+    .frame-02-repository-row[data-slot="4"] { top: 606px; }
+
+    .frame-02-repository-row-mit {
+      background: #39d7ce;
+      border-top-color: #39d7ce;
+      color: #06111c;
+    }
+
+    .frame-02-repository-index {
+      position: absolute;
+      top: 26px;
+      left: 0;
+      font-size: 18px;
+      color: #7d9aa8;
+    }
+
+    .frame-02-repository-row-mit .frame-02-repository-index {
+      left: 24px;
+      color: rgba(17, 17, 17, 0.55);
+    }
+
+    .frame-02-repository-label {
+      position: absolute;
+      left: 94px;
+      top: 42px;
+      font-family: monospace;
+      font-size: 57px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.045em;
+      color: #e9f4f7;
+    }
+
+    .frame-02-repository-row-mit .frame-02-repository-label {
+      left: 118px;
+      color: #06111c;
+    }
+
+    .frame-02-repository-row-meta {
+      position: absolute;
+      left: 96px;
+      bottom: 28px;
+      font-size: 13px;
+      line-height: 1;
+      color: #485050;
+    }
+
+    .frame-02-repository-row-mit .frame-02-repository-row-meta {
+      left: 120px;
+      color: rgba(17, 17, 17, 0.55);
+    }
+
+    .frame-02-repository-progress {
+      position: absolute;
+      top: 74px;
+      right: 26px;
+      width: 190px;
+      height: 4px;
+      background: #262828;
+      overflow: visible;
+    }
+
+    .frame-02-repository-progress-fill {
+      position: absolute;
+      inset: 0;
+      background: #39d7ce;
+      transform-origin: 0 50%;
+      will-change: transform;
+    }
+
+    .frame-02-repository-progress-tip {
+      position: absolute;
+      top: -5px;
+      right: -1px;
+      width: 2px;
+      height: 14px;
+      background: #39d7ce;
+    }
+
+    .frame-02-repository-row-mit .frame-02-repository-progress {
+      background: rgba(17, 17, 17, 0.2);
+    }
+
+    .frame-02-repository-row-mit .frame-02-repository-progress-fill,
+    .frame-02-repository-row-mit .frame-02-repository-progress-tip {
+      background: #06111c;
+    }
+
+    .frame-02-repository-state {
+      position: absolute;
+      right: 26px;
+      bottom: 27px;
+      font-family: monospace;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: #39d7ce;
+    }
+
+    .frame-02-repository-row-mit .frame-02-repository-state {
+      color: #06111c;
+    }
+
+    .frame-02-repository-scale {
+      position: absolute;
+      top: 1398px;
+      left: 60px;
+      width: 960px;
+      height: 132px;
+    }
+
+    .frame-02-repository-scale-line {
+      position: absolute;
+      top: 28px;
+      left: 0;
+      width: 960px;
+      height: 1px;
+      background: #485050;
+      transform-origin: 0 50%;
+      will-change: transform;
+    }
+
+    .frame-02-repository-scale-tick {
+      position: absolute;
+      top: 20px;
+      width: 1px;
+      height: 17px;
+      background: #7d9aa8;
+    }
+
+    .frame-02-repository-scale-tick:nth-child(2) { left: 0; }
+    .frame-02-repository-scale-tick:nth-child(3) { left: 25%; }
+    .frame-02-repository-scale-tick:nth-child(4) { left: 50%; }
+    .frame-02-repository-scale-tick:nth-child(5) { left: 75%; }
+    .frame-02-repository-scale-tick:nth-child(6) { right: 0; }
+
+    .frame-02-repository-scale-copy {
+      position: absolute;
+      top: 57px;
+      left: 0;
+      font-size: 24px;
+      font-weight: 700;
+      color: #7d9aa8;
+    }
+
+    .frame-02-repository-scale-copy strong {
+      color: #39d7ce;
+      font-weight: 700;
+    }
+  </style>
+
+  <div data-hf-id="hf-1l54" id="root" data-composition-id="02-repository" data-width="1080" data-height="1920">
+    <div data-hf-id="hf-rm8q" class="clip frame-02-repository-ground" data-start="0" data-duration="9" data-track-index="0">
+      <svg data-hf-id="hf-agk6" class="frame-02-repository-grid" viewBox="0 0 1080 1920" aria-hidden="true">
+        <g data-hf-id="hf-daz8" fill="none" stroke="#262828" stroke-width="1">
+          <path data-hf-id="hf-h1m4" d="M60 0V1590M300 0V1590M540 0V1590M780 0V1590M1020 0V1590" />
+          <path data-hf-id="hf-6t08" d="M0 320H1080M0 640H1080M0 960H1080M0 1280H1080M0 1590H1080" />
+        </g>
+        <g data-hf-id="hf-i9wv" fill="none" stroke="#39D7CE" stroke-width="1" opacity="0.15">
+          <path data-hf-id="hf-ccct" d="M60 470H1020" />
+          <path data-hf-id="hf-dhv1" d="M60 1398H1020" />
+        </g>
+      </svg>
+    </div>
+
+    <div data-hf-id="hf-2kfs" class="clip frame-02-repository-stage" data-start="0" data-duration="9" data-track-index="1">
+      <div data-hf-id="hf-f7mg" class="frame-02-repository-top-rule"></div>
+      <div data-hf-id="hf-ogku" class="frame-02-repository-kicker">OFFICIAL REPOSITORY</div>
+      <div data-hf-id="hf-433x" class="frame-02-repository-catalogue">CATALOGUE / 02</div>
+
+      <div data-hf-id="hf-z914" class="frame-02-repository-title" aria-label="DEEPSEEK V4 FLASH VISION EXP">
+        <span data-hf-id="hf-7vcn" class="frame-02-repository-title-line" data-decode="DEEPSEEK V4 /"></span>
+        <span data-hf-id="hf-bg1r" class="frame-02-repository-title-line" data-decode="FLASH VISION EXP"></span>
+      </div>
+
+      <div data-hf-id="hf-fzi6" class="frame-02-repository-directory" aria-hidden="true">
+        <div data-hf-id="hf-65mp" class="frame-02-repository-directory-copy"><strong data-hf-id="hf-c73h">01</strong><span data-hf-id="hf-3azr">/MODEL</span></div>
+        <div data-hf-id="hf-1nh1" class="frame-02-repository-directory-copy"><strong data-hf-id="hf-de0k">02</strong><span data-hf-id="hf-x3ug">/PROMPT</span></div>
+        <div data-hf-id="hf-2ue4" class="frame-02-repository-directory-copy"><strong data-hf-id="hf-czpj">03</strong><span data-hf-id="hf-rb4b">/RUN</span></div>
+        <div data-hf-id="hf-2g33" class="frame-02-repository-directory-copy"><strong data-hf-id="hf-e6mm">04</strong><span data-hf-id="hf-0s5x">/LICENSE</span></div>
+      </div>
+
+      <div data-hf-id="hf-vxzg" class="frame-02-repository-list">
+        <div data-hf-id="hf-7htc" class="frame-02-repository-row" data-slot="1" data-enter-x="-74">
+          <span data-hf-id="hf-mnas" class="frame-02-repository-index">01</span>
+          <span data-hf-id="hf-01ha" class="frame-02-repository-label">WEIGHTS</span>
+          <span data-hf-id="hf-fjcx" class="frame-02-repository-row-meta">MODEL FILES / RELEASED</span>
+          <span data-hf-id="hf-wt68" class="frame-02-repository-progress"><span data-hf-id="hf-usoq" class="frame-02-repository-progress-fill"><span data-hf-id="hf-wz5s" class="frame-02-repository-progress-tip"></span></span></span>
+          <span data-hf-id="hf-90eo" class="frame-02-repository-state">OPEN</span>
+        </div>
+
+        <div data-hf-id="hf-wesv" class="frame-02-repository-row" data-slot="2" data-enter-x="68">
+          <span data-hf-id="hf-lgdp" class="frame-02-repository-index">02</span>
+          <span data-hf-id="hf-c3io" class="frame-02-repository-label">ENCODING</span>
+          <span data-hf-id="hf-zfap" class="frame-02-repository-row-meta">PROMPT CODE / INCLUDED</span>
+          <span data-hf-id="hf-9eo8" class="frame-02-repository-progress"><span data-hf-id="hf-2xjy" class="frame-02-repository-progress-fill"><span data-hf-id="hf-v01k" class="frame-02-repository-progress-tip"></span></span></span>
+          <span data-hf-id="hf-lnhk" class="frame-02-repository-state">OPEN</span>
+        </div>
+
+        <div data-hf-id="hf-gq0o" class="frame-02-repository-row" data-slot="3" data-enter-x="-58">
+          <span data-hf-id="hf-luoq" class="frame-02-repository-index">03</span>
+          <span data-hf-id="hf-c710" class="frame-02-repository-label">INFERENCE</span>
+          <span data-hf-id="hf-fwfe" class="frame-02-repository-row-meta">MINIMAL RUN / INCLUDED</span>
+          <span data-hf-id="hf-87r5" class="frame-02-repository-progress"><span data-hf-id="hf-3buz" class="frame-02-repository-progress-fill"><span data-hf-id="hf-tt4h" class="frame-02-repository-progress-tip"></span></span></span>
+          <span data-hf-id="hf-kgkh" class="frame-02-repository-state">OPEN</span>
+        </div>
+
+        <div data-hf-id="hf-j1do" class="frame-02-repository-row frame-02-repository-row-mit" data-slot="4" data-enter-x="82">
+          <span data-hf-id="hf-nu7v" class="frame-02-repository-index">04</span>
+          <span data-hf-id="hf-78yd" class="frame-02-repository-label">MIT</span>
+          <span data-hf-id="hf-2rsy" class="frame-02-repository-row-meta">LICENSE / PERMISSIVE</span>
+          <span data-hf-id="hf-8m26" class="frame-02-repository-progress"><span data-hf-id="hf-3q60" class="frame-02-repository-progress-fill"><span data-hf-id="hf-u7fi" class="frame-02-repository-progress-tip"></span></span></span>
+          <span data-hf-id="hf-kuvi" class="frame-02-repository-state">OPEN</span>
+        </div>
+      </div>
+
+      <div data-hf-id="hf-u1u2" class="frame-02-repository-scale">
+        <span data-hf-id="hf-ztuc" class="frame-02-repository-scale-line"></span>
+        <span data-hf-id="hf-jxwx" class="frame-02-repository-scale-tick"></span>
+        <span data-hf-id="hf-24px" class="frame-02-repository-scale-tick"></span>
+        <span data-hf-id="hf-3bn0" class="frame-02-repository-scale-tick"></span>
+        <span data-hf-id="hf-2xbz" class="frame-02-repository-scale-tick"></span>
+        <span data-hf-id="hf-4492" class="frame-02-repository-scale-tick"></span>
+        <span data-hf-id="hf-j9wd" class="frame-02-repository-scale-copy"><strong data-hf-id="hf-0m7y">≈305B</strong> PARAMETERS</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script>
+    (() => {
+      const scope = document.querySelector('[data-composition-id="02-repository"]');
+      const decodeLines = scope.querySelectorAll('.frame-02-repository-title-line');
+
+      decodeLines.forEach((line) => {
+        [...line.dataset.decode].forEach((letter) => {
+          const char = document.createElement('span');
+          char.className = letter === ' '
+            ? 'frame-02-repository-char frame-02-repository-char-space'
+            : 'frame-02-repository-char';
+          char.textContent = letter === ' ' ? '\u00a0' : letter;
+          line.appendChild(char);
+        });
+      });
+
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines = window.__timelines || {};
+      window.__timelines['02-repository'] = tl;
+
+      const titleLines = scope.querySelectorAll('.frame-02-repository-title-line');
+      const firstChars = titleLines[0].querySelectorAll('.frame-02-repository-char');
+      const secondChars = titleLines[1].querySelectorAll('.frame-02-repository-char');
+      const directoryRows = scope.querySelectorAll('.frame-02-repository-directory-copy');
+      const rows = scope.querySelectorAll('.frame-02-repository-row');
+      const fills = scope.querySelectorAll('.frame-02-repository-progress-fill');
+      const states = scope.querySelectorAll('.frame-02-repository-state');
+      const scale = scope.querySelector('.frame-02-repository-scale');
+      const scaleLine = scope.querySelector('.frame-02-repository-scale-line');
+      const scaleTicks = scope.querySelectorAll('.frame-02-repository-scale-tick');
+
+      tl.fromTo(
+        firstChars,
+        { rotationX: -92, y: 28, opacity: 0.08 },
+        { rotationX: 0, y: 0, opacity: 1, duration: 0.46, ease: 'power3.out', stagger: 0.026 },
+        0.06
+      );
+      tl.fromTo(
+        secondChars,
+        { rotationX: 92, y: -24, opacity: 0.08 },
+        { rotationX: 0, y: 0, opacity: 1, duration: 0.5, ease: 'power3.out', stagger: 0.024 },
+        0.66
+      );
+      tl.fromTo(
+        directoryRows,
+        { x: 32, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.45, ease: 'power3.out', stagger: 0.07 },
+        0.72
+      );
+
+      const entryTimes = [0.4, 2.45, 4.45, 6.88];
+      const fillTimes = [1.18, 3.1, 5.18, 7.28];
+
+      rows.forEach((row, index) => {
+        const startX = Number(row.dataset.enterX);
+        tl.fromTo(
+          row,
+          { x: startX, y: 28, scale: 0.94, opacity: 0 },
+          { x: 0, y: 0, scale: 1, opacity: 1, duration: 0.88, ease: 'power3.out' },
+          entryTimes[index]
+        );
+        tl.fromTo(
+          fills[index],
+          { scaleX: 0 },
+          { scaleX: 1, duration: 0.74, ease: 'power2.out' },
+          fillTimes[index]
+        );
+        tl.fromTo(
+          states[index],
+          { opacity: 0, x: 20 },
+          { opacity: 1, x: 0, duration: 0.34, ease: 'power3.out' },
+          fillTimes[index] + 0.44
+        );
+      });
+
+      tl.fromTo(
+        scale,
+        { y: 34, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.7, ease: 'power3.out' },
+        7.48
+      );
+      tl.fromTo(
+        scaleLine,
+        { scaleX: 0 },
+        { scaleX: 1, duration: 0.82, ease: 'power2.out' },
+        7.62
+      );
+      tl.fromTo(
+        scaleTicks,
+        { scaleY: 0, opacity: 0 },
+        { scaleY: 1, opacity: 1, duration: 0.25, ease: 'power3.out', stagger: 0.08 },
+        8.02
+      );
+    })();
+  </script>
+</template>

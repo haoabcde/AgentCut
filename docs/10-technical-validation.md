@@ -2,7 +2,7 @@
 
 ## 1. 当前结论
 
-截至 2026-07-18，TV-1 已形成可执行基线，TV-2 的内存事务子集已通过 1,000 次随机 trim/inverse round-trip，TV-3 的最小 SQLite/进程崩溃恢复 Gate 已通过；技术验证总 Gate **尚未通过**。缺口主要是完整 typed operation 混合 replay、schema migration/旧版本保护、长项目与断电级恢复、预览/导出 parity、中文 ASR benchmark 和 MCP contract test。
+截至 2026-07-28，TV-1/TV-2 已形成可执行基线，TV-3 已通过最小 SQLite/进程崩溃恢复、全 operation replay、10 分钟规模与可诊断容量/逻辑损坏测试；真实媒体/ASR、一键建项、剪后 PreviewPlan 和持久化导出 job 也已进入实现。P0 数据正确性工程 Gate 已关闭，技术验证总 Gate **尚未通过**；当前主要缺口收敛为 libass 真实成片 parity、全部 cut 边界听审与 MCP contract。
 
 这批实现的目的不是提前开发编辑器，而是用真实代码验证三个高风险判断：
 
@@ -15,12 +15,14 @@
 | 资产 | 路径 | 已验证内容 |
 |---|---|---|
 | IR 0.1 JSON Schema | `packages/timeline-schema/schema/timeline-project-0.1.schema.json` | 结构、精确时间、media/nestedSequence 条件字段、锁 scope、history |
-| TypeScript 领域类型 | `packages/timeline-schema/src/types.ts` | Project、Sequence、Track、Clip、Lock、Provenance |
-| 结构与语义验证器 | `packages/timeline-schema/src/validate.ts` | dangling reference、全局重复 ID、轨道/clip 兼容、revision 一致性、正 duration |
-| Golden fixture | `packages/timeline-schema/fixtures/minimal-project.json` | 29.97 fps 中文口播最小项目 |
+| TypeScript 领域类型 | `packages/timeline-schema/src/types.ts` | Project、Sequence、Track、Clip、Lock、Transcript、Candidate、Proposal、Provenance |
+| 结构与语义验证器 | `packages/timeline-schema/src/validate.ts` | dangling reference、稳定 word/candidate identity、source/revision binding、轨道/clip 兼容 |
+| Golden + migration fixture | `packages/timeline-schema/fixtures/` | 29.97 fps 中文口播 typed artifacts、合成旧格式迁移 |
+| Migration runner | `packages/timeline-schema/src/migrate.ts` | 纯迁移、dry-run report、输入不变、未知/更新 schema 只读保护 |
 | 精确时间引擎 | `packages/timeline-engine/src/time.ts` | BigInt rational、比较、转换、加减、半开区间 overlap |
 | 内存事务内核 | `packages/edit-commands/src/engine.ts` | 原子提交、optimistic revision、幂等、precondition、锁、inverse、undo、history hash |
-| Typed operations | `packages/edit-commands/src/types.ts` | track add/remove、clip insert/remove/move/trim/replace/update、lock add/remove |
+| Typed operations | `packages/edit-commands/src/types.ts` | artifact、track、clip split/move/trim/replace/update、Ripple delete、lock |
+| Proposal compiler | `packages/edit-commands/src/proposal.ts` | revision/hash 校验、ASR 边界吸附、区间合并、右到左 Ripple transaction |
 | SQLite project store | `packages/project-store/src/project-store.ts` | WAL、`BEGIN IMMEDIATE`、revision/command/inverse/idempotency/checkpoint 原子提交、重启 replay 验证 |
 | Crash harness | `packages/project-store/test-fixtures/crash-worker.mjs` | 事务 7 个边界真实 `SIGKILL`，重启只暴露最后完整 revision |
 
@@ -39,9 +41,16 @@
 - `deny_agent` range lock 同时阻止 agent/workflow；property lock 只阻止相交字段，不冻结无关字段。
 - inverse 作为新事务执行，保留审计历史而不是回写旧 revision。
 - 1,000 组随机 start/duration 的 trim -> undo 恢复可编辑状态。
+- Proposal payload 被 hash 绑定；毫秒 ASR 范围显式吸附到素材时间单位，相邻删除合并，多个区间从右向左编译。
+- split/Ripple 同步维护 timeline/source range；中段删除生成稳定的新 clip ID，后续 clip 前移，锁冲突与 Undo 可验证。
 - SQLite 使用 WAL + `synchronous=FULL`；两个连接基于同一 revision 写入时只有首个成功，后一个显式收到 `REVISION_CONFLICT`。
 - 在 begin、apply、command insert、state update、checkpoint、commit 前和 commit 后分别杀死真实子进程；commit 前恢复 revision 0 且无 command，commit 后恢复 revision 1 且 command 可 replay。
 - 幂等 payload hash、command record、inverse、current snapshot 与 checkpoint 在同一数据库事务中提交；关闭并重开后重复请求不产生第二次提交。
+- 14 次混合提交覆盖 0.1 全部 edit operation；SQLite 当场 replay 和关闭重开后的 replay/hash 与 head 一致。
+- 合成 `0.0.0` fixture 可纯迁移到 0.1；dry-run 不修改输入，未知 major 与更新 minor 返回只读结果。
+- 100 轮随机 split/Ripple 参数与全 operation 生命周期均可逆序 Undo 回初始可编辑状态。
+- 10 分钟、1,798 词、90 个候选范围可编译为单个 Proposal transaction，并在 SQLite 重启后 replay/hash 一致。
+- `SQLITE_FULL` 容量模拟无半提交并返回 `STORE_CAPACITY`；非法 document JSON 与 state hash 漂移在打开数据库时返回 `STORE_CORRUPT`。
 
 本地统一验证命令：
 
@@ -57,9 +66,9 @@ pnpm check
 以下能力仍是设计，不应被描述成“已经完成”：
 
 - 当前 crash harness 证明进程 `SIGKILL` 和双连接抢写下无半提交；它不等于断电/磁盘损坏证明，尚未做 WAL 字节破坏、磁盘写满和真实掉电测试。
-- 当前只实现 10 种核心 operation，未实现 split、ripple range delete、caption/transition 专用命令。
-- 重启后的 undo/replay 已覆盖单一 fixture；尚未覆盖全部 operation 混合序列、10 分钟项目规模和跨 schema 版本 replay。
-- JSON Schema 能验证结构与部分引用，但尚无 schema migration runner、旧 major 只读模式和 bundle round-trip。
+- 当前已实现第一阶段需要的 split/Ripple，但尚未实现 caption/transition 专用命令；随机测试覆盖内存生命周期，SQLite 覆盖确定性全 operation 与 10 分钟 Proposal，不等于穷举任意合法命令序列。
+- 容量不足由 SQLite page 上限稳定触发，不等于真实宿主磁盘写满；损坏副本覆盖 JSON/hash 漂移，尚未进行原始 WAL 字节注入。
+- migration runner 当前只验证合成旧 fixture；尚无已发布旧版、下一真实 schema 迁移和 bundle round-trip。
 - 尚未用真实 10 分钟/长 GOP/VFR/多声道素材验证性能、边界和 A/V sync。
 - 尚未启动浏览器 preview adapter、FFmpeg compiler、OTIO、ASR 和 MCP 的实测。
 
@@ -89,12 +98,19 @@ pnpm check
 
 SQLite store 采用 WAL、`BEGIN IMMEDIATE` 和唯一 revision/idempotency 约束。任何 command 只有两种外部可见状态：完整提交，或完全不存在。checkpoint 是恢复加速结构，不是第二份领域真相；恢复后仍用 genesis + command replay/hash 对 head 做一致性验证。
 
+### TD-007：ASR 时间不能直接当 Timeline 帧
+
+Transcript 保留 Provider 的精确 source range；提交 Proposal 时才在 adapter 边界显式使用 `nearest` 吸附到绑定 clip 的 source rate，并从 source offset 映射到 timeline。吸附策略必须进入后续 quality report，不能把取整伪装成精确对齐。
+
+### TD-008：Candidate binding 是 revision 快照，不是永久实时外键
+
+Candidate set 在其 `projectRevision` 等于 head 时必须解析到同一 sequence/clip/source asset；Timeline 提交后它成为历史证据，不再要求旧 source range 仍包含于已经裁切的当前 clip。否则任何合法 trim/Ripple 都会使历史 artifact 反向破坏当前文档有效性。
+
 ## 6. 下一批实施顺序
 
-1. 将当前 1,000 次 property test 扩展到全部 operation 混合序列，并用 DB replay 验证 hash。
-2. 补 `clip.split`、`range.delete(ripple)`、caption/transition 专用命令及锁交叉测试。
-3. 实现 0.1 -> 下一 fixture 的纯 migration runner、dry-run report 和未知 major 只读保护。
-4. 增加 10 分钟项目、磁盘写满/WAL 损坏等恢复测试，明确 SQLite 可靠性结论的边界。
-5. 完成上述数据正确性 Gate 后，再启动 PreviewAdapter/FFmpeg parity 与 MCP contract spike。
+1. 启动 P1 ingest/ASR benchmark，用真实中文口播验证 source time、帧吸附和 Ripple cut 质量。
+2. 增加 bundle round-trip 和未来真实 schema fixture；在出现真实 0.2 前不夸大合成迁移证明。
+3. 在后续硬化阶段补真实临时卷容量限制和原始 WAL 字节损坏，不把当前模拟外推为硬件断电证明。
+4. P1 选出默认 ASR 路径后启动 Transcript 审阅壳；PreviewAdapter/FFmpeg parity 与 MCP 按长程 Gate 顺序推进。
 
-TV-3 的最小进程崩溃 Gate 已通过，但只有第 1–4 项继续通过，数据正确性 Gate 才能整体关闭；本文件不会把 `SIGKILL` 测试外推成断电或存储损坏可靠性结论。
+P0 数据正确性工程 Gate 已关闭，但本文件不会把 `SIGKILL`、SQLite page 上限和逻辑损坏副本测试外推成真实断电、物理介质损坏或任意命令穷举证明。

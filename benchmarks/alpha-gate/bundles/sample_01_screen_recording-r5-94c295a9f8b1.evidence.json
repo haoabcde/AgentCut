@@ -1,0 +1,143 @@
+{
+  "schemaVersion": "1.0",
+  "project": {
+    "id": "project_p1_real_dogfood",
+    "revision": 5,
+    "sourceSha256": "sha256:9a2755b480047b80c21d0050fd214836674aaf33dfd168a2fff9393b28dd1ad2",
+    "transcriptId": "transcript_4a3ee1301a8bbd79fd69ba21"
+  },
+  "review": {
+    "projectCompleted": false,
+    "pendingCandidateIds": [
+      "candidate_e9cfbed53e5770e392087a8d",
+      "candidate_c97470a5e30330c10730d90c",
+      "candidate_499c86db260f8147437a833a",
+      "candidate_f7584fc4f3a5bbcb5579c5ab",
+      "candidate_2c961158659af60ef7b51a72"
+    ]
+  },
+  "candidates": [
+    {
+      "candidateId": "candidate_e9cfbed53e5770e392087a8d",
+      "decision": "definite_remove",
+      "risk": "low",
+      "state": "candidate_remove",
+      "label": null
+    },
+    {
+      "candidateId": "candidate_c97470a5e30330c10730d90c",
+      "decision": "suggest_remove",
+      "risk": "medium",
+      "state": "candidate_remove",
+      "label": null
+    },
+    {
+      "candidateId": "candidate_499c86db260f8147437a833a",
+      "decision": "suggest_remove",
+      "risk": "medium",
+      "state": "candidate_remove",
+      "label": null
+    },
+    {
+      "candidateId": "candidate_f7584fc4f3a5bbcb5579c5ab",
+      "decision": "suggest_remove",
+      "risk": "medium",
+      "state": "candidate_remove",
+      "label": null
+    },
+    {
+      "candidateId": "candidate_2c961158659af60ef7b51a72",
+      "decision": "suggest_remove",
+      "risk": "medium",
+      "state": "candidate_remove",
+      "label": null
+    }
+  ],
+  "boundaries": [
+    {
+      "boundaryId": "boundary_asset_9a2755b480047b80c21d0050_24275833_25850000",
+      "candidateIds": [],
+      "usable": null,
+      "issueCodes": []
+    }
+  ],
+  "derived": {
+    "highRiskAutoDeletedCandidateIds": [],
+    "firstHumanDecisionRevision": null
+  },
+  "export": null,
+  "timing": null,
+  "progress": {
+    "candidateLabeled": 0,
+    "candidateTotal": 5,
+    "boundaryLabeled": 0,
+    "boundaryTotal": 1,
+    "complete": false
+  },
+  "events": [
+    {
+      "sequence": 1,
+      "requestId": "alpha-collect:sample_01_screen_recording:r5:correctness-v1",
+      "projectId": "project_p1_real_dogfood",
+      "projectRevision": 5,
+      "sourceSha256": "sha256:9a2755b480047b80c21d0050fd214836674aaf33dfd168a2fff9393b28dd1ad2",
+      "targetType": "correctness",
+      "targetId": "alpha-collect:sample_01_screen_recording:r5:correctness-v1",
+      "candidateLabel": null,
+      "boundaryUsable": null,
+      "boundaryIssueCodes": [],
+      "correctnessResult": {
+        "sourceStateHash": "sha256:830d48c59ba600eba26b87b6313fd551fcbc935fe275b120eb45f09bdb1ac974",
+        "checks": {
+          "undo": {
+            "passed": true,
+            "code": "DOMAIN_STATE_RESTORED",
+            "details": {
+              "domainStateRestored": true,
+              "expectedRevision": 7,
+              "observedRevision": 7,
+              "replayVerified": true
+            }
+          },
+          "restart": {
+            "passed": true,
+            "code": "STATE_REOPEN_MATCH",
+            "details": {
+              "expectedRevision": 6,
+              "observedRevision": 6,
+              "stateHashMatch": true,
+              "replayVerified": true
+            }
+          },
+          "idempotency": {
+            "passed": true,
+            "code": "IDEMPOTENT_REPLAY",
+            "details": {
+              "idempotentReplay": true,
+              "revisionBefore": 6,
+              "revisionAfter": 6,
+              "stateUnchanged": true
+            }
+          },
+          "revisionConflict": {
+            "passed": true,
+            "code": "REVISION_CONFLICT_REJECTED",
+            "details": {
+              "observedCode": "REVISION_CONFLICT",
+              "revisionUnchanged": true,
+              "stateUnchanged": true,
+              "commandCountUnchanged": true
+            }
+          }
+        }
+      },
+      "createdAt": "2026-08-11T05:31:30.206Z",
+      "payloadHash": "9c77d9e92dbc332ea315f69b1c136c38a3277888580b662e172b1ed226ad217a",
+      "noteSha256": null
+    }
+  ],
+  "integrity": {
+    "algorithm": "sha256",
+    "payloadSha256": "sha256:769ab0f53b6ec99a52bbbec074f582451edd8338328d86355d62f9e9295f94f1"
+  }
+}

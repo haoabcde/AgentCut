@@ -1,0 +1,569 @@
+<template>
+  <style>
+    #root {
+      width: 1080px;
+      height: 1920px;
+      position: relative;
+      overflow: hidden;
+      container-type: size;
+      color: #E9F4F7;
+    }
+
+    #root * {
+      box-sizing: border-box;
+    }
+
+    .clip {
+      position: absolute;
+      inset: 0;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+    }
+
+    .f03-ground {
+      background: #06111C;
+    }
+
+    .f03-grid {
+      position: absolute;
+      inset: 0;
+      width: 1080px;
+      height: 1600px;
+      opacity: 0.42;
+    }
+
+    .f03-grid line {
+      stroke: #262828;
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .f03-scan-beam {
+      position: absolute;
+      left: 60px;
+      top: 150px;
+      width: 960px;
+      height: 2px;
+      background: #39D7CE;
+      opacity: 0.38;
+    }
+
+    .f03-stage {
+      position: absolute;
+      inset: 0;
+      width: 1080px;
+      height: 1600px;
+      padding: 78px 60px 0;
+      font-family: sans-serif;
+    }
+
+    .f03-chrome {
+      position: absolute;
+      left: 60px;
+      right: 60px;
+      top: 74px;
+      height: 52px;
+      border-top: 1px solid #262828;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #7D9AA8;
+      font-family: monospace;
+      font-size: 21px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .f03-chrome strong {
+      color: #39D7CE;
+      font-weight: 500;
+    }
+
+    .f03-input-stack {
+      position: absolute;
+      left: 60px;
+      right: 60px;
+      top: 286px;
+      height: 380px;
+    }
+
+    .f03-input-node,
+    .f03-tool-node {
+      position: absolute;
+      left: 0;
+      width: 960px;
+      height: 100px;
+      border-top: 1px solid #485050;
+      display: grid;
+      grid-template-columns: 190px 1fr 100px;
+      align-items: center;
+      padding: 0 18px 0 0;
+    }
+
+    .f03-input-node::before,
+    .f03-tool-node::before {
+      content: "";
+      width: 36px;
+      height: 2px;
+      background: #39D7CE;
+      align-self: start;
+      margin-top: -1px;
+      grid-column: 1;
+    }
+
+    .f03-input-node:nth-child(1) { top: 0; }
+    .f03-input-node:nth-child(2) { top: 122px; }
+    .f03-input-node:nth-child(3) { top: 244px; }
+
+    .f03-node-index {
+      position: absolute;
+      left: 0;
+      color: #7D9AA8;
+      font-family: monospace;
+      font-size: 20px;
+      letter-spacing: 0.14em;
+    }
+
+    .f03-node-label {
+      grid-column: 2;
+      color: #E9F4F7;
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .f03-node-state {
+      grid-column: 3;
+      justify-self: end;
+      color: #39D7CE;
+      font-family: monospace;
+      font-size: 19px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .f03-pipeline {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1080px;
+      height: 1540px;
+      pointer-events: none;
+    }
+
+    .f03-pipeline-path {
+      fill: none;
+      stroke: #39D7CE;
+      stroke-width: 2;
+      stroke-linecap: square;
+      stroke-linejoin: miter;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .f03-pipeline-ghost {
+      fill: none;
+      stroke: #262828;
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .f03-core {
+      position: absolute;
+      left: 245px;
+      top: 716px;
+      width: 590px;
+      height: 350px;
+      border: 1px solid #485050;
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      align-items: center;
+      padding: 34px 42px;
+      background: #06111C;
+    }
+
+    .f03-core::before,
+    .f03-core::after {
+      content: "";
+      position: absolute;
+      width: 58px;
+      height: 2px;
+      background: #39D7CE;
+    }
+
+    .f03-core::before { top: -1px; left: -1px; }
+    .f03-core::after { right: -1px; bottom: -1px; }
+
+    .f03-core-viz {
+      position: relative;
+      width: 164px;
+      height: 164px;
+    }
+
+    .f03-core-viz svg {
+      width: 164px;
+      height: 164px;
+      overflow: visible;
+    }
+
+    .f03-core-ring {
+      fill: none;
+      stroke: #485050;
+      stroke-width: 1;
+    }
+
+    .f03-scan-arc {
+      fill: none;
+      stroke: #39D7CE;
+      stroke-width: 8;
+      stroke-linecap: square;
+    }
+
+    .f03-core-dot {
+      position: absolute;
+      left: 67px;
+      top: 67px;
+      width: 30px;
+      height: 30px;
+      background: #39D7CE;
+    }
+
+    .f03-core-copy {
+      position: relative;
+      padding-left: 32px;
+      border-left: 1px solid #262828;
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .f03-kicker {
+      color: #39D7CE;
+      font-family: monospace;
+      font-size: 19px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .f03-core-title {
+      color: #E9F4F7;
+      font-size: 58px;
+      line-height: 0.94;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+
+    .f03-status-slot {
+      position: relative;
+      height: 46px;
+      margin-top: 25px;
+      color: #39D7CE;
+      font-family: monospace;
+      font-size: 25px;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      overflow: hidden;
+    }
+
+    .f03-status-word {
+      position: absolute;
+      left: 0;
+      top: 0;
+      white-space: nowrap;
+    }
+
+    .f03-tool-stack {
+      position: absolute;
+      left: 60px;
+      right: 60px;
+      top: 1158px;
+      height: 362px;
+    }
+
+    .f03-tool-node:nth-child(1) { top: 0; }
+    .f03-tool-node:nth-child(2) { top: 118px; }
+    .f03-tool-node:nth-child(3) { top: 236px; }
+
+    .f03-receipt {
+      grid-column: 3;
+      justify-self: end;
+      width: 44px;
+      height: 44px;
+      position: relative;
+      border: 1px solid #39D7CE;
+    }
+
+    .f03-receipt svg {
+      position: absolute;
+      left: 7px;
+      top: 7px;
+      width: 28px;
+      height: 28px;
+    }
+
+    .f03-check-path {
+      fill: none;
+      stroke: #39D7CE;
+      stroke-width: 3;
+      stroke-linecap: square;
+      stroke-linejoin: miter;
+    }
+
+    .f03-payoff {
+      position: absolute;
+      left: 60px;
+      top: 150px;
+      width: 960px;
+      height: 160px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      pointer-events: none;
+    }
+
+    .f03-payoff-line {
+      height: 84px;
+      color: #E9F4F7;
+      font-size: 88px;
+      line-height: 0.9;
+      font-weight: 900;
+      letter-spacing: -0.045em;
+    }
+
+    .f03-payoff-line:last-child {
+      color: #39D7CE;
+    }
+
+    .f03-safe-rule {
+      position: absolute;
+      left: 60px;
+      right: 60px;
+      top: 1548px;
+      height: 1px;
+      background: #262828;
+    }
+  </style>
+
+  <div data-hf-id="hf-gvri" id="root" data-composition-id="03-agent-loop" data-duration="10" data-width="1080" data-height="1920">
+    <div data-hf-id="hf-bexk" class="clip f03-ground" data-start="0" data-duration="10" data-track-index="0">
+      <svg data-hf-id="hf-jgep" class="f03-grid" viewBox="0 0 1080 1600" aria-hidden="true">
+        <line data-hf-id="hf-grwn" x1="60" y1="0" x2="60" y2="1600" />
+        <line data-hf-id="hf-8uyn" x1="245" y1="0" x2="245" y2="1600" />
+        <line data-hf-id="hf-znzj" x1="540" y1="0" x2="540" y2="1600" />
+        <line data-hf-id="hf-vajt" x1="835" y1="0" x2="835" y2="1600" />
+        <line data-hf-id="hf-vu7j" x1="1020" y1="0" x2="1020" y2="1600" />
+        <line data-hf-id="hf-4qgf" x1="0" y1="160" x2="1080" y2="160" />
+        <line data-hf-id="hf-trav" x1="0" y1="520" x2="1080" y2="520" />
+        <line data-hf-id="hf-2azp" x1="0" y1="880" x2="1080" y2="880" />
+        <line data-hf-id="hf-wcdx" x1="0" y1="1240" x2="1080" y2="1240" />
+        <line data-hf-id="hf-yhg1" x1="0" y1="1590" x2="1080" y2="1590" />
+      </svg>
+      <div data-hf-id="hf-sojf" class="f03-scan-beam" id="03-agent-loop-scan-beam"></div>
+    </div>
+
+    <div data-hf-id="hf-dbm8" class="clip" data-start="0" data-duration="10" data-track-index="1">
+      <div data-hf-id="hf-s41c" class="f03-stage">
+        <div data-hf-id="hf-5sto" class="f03-chrome">
+          <span data-hf-id="hf-td7n">multimodal / agent loop</span>
+          <strong data-hf-id="hf-czpj">03</strong>
+        </div>
+
+        <div data-hf-id="hf-hbw5" class="f03-input-stack">
+          <div data-hf-id="hf-8uds" class="f03-input-node" id="03-agent-loop-input-1">
+            <span data-hf-id="hf-sg2z" class="f03-node-index">01</span><span data-hf-id="hf-2lxm" class="f03-node-label">SCREENSHOT</span><span data-hf-id="hf-wvht" class="f03-node-state">input</span>
+          </div>
+          <div data-hf-id="hf-hi9n" class="f03-input-node" id="03-agent-loop-input-2">
+            <span data-hf-id="hf-s1ry" class="f03-node-index">02</span><span data-hf-id="hf-jtdu" class="f03-node-label">CHART</span><span data-hf-id="hf-8485" class="f03-node-state">input</span>
+          </div>
+          <div data-hf-id="hf-dk5m" class="f03-input-node" id="03-agent-loop-input-3">
+            <span data-hf-id="hf-rngx" class="f03-node-index">03</span><span data-hf-id="hf-2683" class="f03-node-label">IMAGE</span><span data-hf-id="hf-9b58" class="f03-node-state">input</span>
+          </div>
+        </div>
+
+        <svg data-hf-id="hf-ncso" class="f03-pipeline" viewBox="0 0 1080 1540" aria-hidden="true">
+          <path data-hf-id="hf-jc6j" class="f03-pipeline-ghost" d="M540 335 L540 716" />
+          <path data-hf-id="hf-ooye" class="f03-pipeline-ghost" d="M540 1066 L540 1444" />
+          <path data-hf-id="hf-jf07" class="f03-pipeline-path f03-draw-path" id="03-agent-loop-in-path-1" d="M965 336 H885 Q835 336 835 386 V630 Q835 690 775 716" />
+          <path data-hf-id="hf-sa45" class="f03-pipeline-path f03-draw-path" id="03-agent-loop-in-path-2" d="M965 458 H795 Q745 458 745 508 V666 Q745 700 700 716" />
+          <path data-hf-id="hf-0cts" class="f03-pipeline-path f03-draw-path" id="03-agent-loop-in-path-3" d="M965 580 H700 Q650 580 650 630 V690 Q650 716 620 716" />
+          <path data-hf-id="hf-26rb" class="f03-pipeline-path f03-draw-path" id="03-agent-loop-out-path-1" d="M460 1066 V1090 Q460 1118 430 1158 H115" />
+          <path data-hf-id="hf-yhon" class="f03-pipeline-path f03-draw-path" id="03-agent-loop-out-path-2" d="M540 1066 V1276 H115" />
+          <path data-hf-id="hf-e6yk" class="f03-pipeline-path f03-draw-path" id="03-agent-loop-out-path-3" d="M620 1066 V1368 Q620 1418 570 1418 H115" />
+        </svg>
+
+        <section data-hf-id="hf-lktj" class="f03-core" id="03-agent-loop-core">
+          <div data-hf-id="hf-r767" class="f03-core-viz">
+            <svg data-hf-id="hf-ejgw" viewBox="0 0 164 164" aria-hidden="true">
+              <circle data-hf-id="hf-bozi" class="f03-core-ring" cx="82" cy="82" r="72" />
+              <circle data-hf-id="hf-b2t9" class="f03-core-ring" cx="82" cy="82" r="48" />
+              <circle data-hf-id="hf-9a24" class="f03-scan-arc" id="03-agent-loop-scan-arc" cx="82" cy="82" r="62" />
+            </svg>
+            <div data-hf-id="hf-84a3" class="f03-core-dot" id="03-agent-loop-core-dot"></div>
+          </div>
+          <div data-hf-id="hf-wm1n" class="f03-core-copy">
+            <div data-hf-id="hf-nbf3" class="f03-kicker">processing layer</div>
+            <div data-hf-id="hf-7xzl" class="f03-core-title">VISION<br data-hf-id="hf-x5px">CORE</div>
+            <div data-hf-id="hf-bku1" class="f03-status-slot">
+              <span data-hf-id="hf-cfoi" class="f03-status-word" id="03-agent-loop-status-see">SEE</span>
+              <span data-hf-id="hf-3rjq" class="f03-status-word" id="03-agent-loop-status-reason">REASON</span>
+            </div>
+          </div>
+        </section>
+
+        <div data-hf-id="hf-d3gb" class="f03-tool-stack">
+          <div data-hf-id="hf-hvy4" class="f03-tool-node" id="03-agent-loop-tool-1">
+            <span data-hf-id="hf-p2jf" class="f03-node-index">A</span><span data-hf-id="hf-innm" class="f03-node-label">BROWSER</span>
+            <span data-hf-id="hf-eav9" class="f03-receipt"><svg data-hf-id="hf-38oo" viewBox="0 0 28 28" aria-hidden="true"><path data-hf-id="hf-8zhd" class="f03-check-path" id="03-agent-loop-check-1" d="M3 15 L10 22 L25 5" /></svg></span>
+          </div>
+          <div data-hf-id="hf-srfr" class="f03-tool-node" id="03-agent-loop-tool-2">
+            <span data-hf-id="hf-oo8e" class="f03-node-index">B</span><span data-hf-id="hf-lpeb" class="f03-node-label">CODE</span>
+            <span data-hf-id="hf-vheh" class="f03-receipt"><svg data-hf-id="hf-zdsg" viewBox="0 0 28 28" aria-hidden="true"><path data-hf-id="hf-cxle" class="f03-check-path" id="03-agent-loop-check-2" d="M3 15 L10 22 L25 5" /></svg></span>
+          </div>
+          <div data-hf-id="hf-otbq" class="f03-tool-node" id="03-agent-loop-tool-3">
+            <span data-hf-id="hf-o9xd" class="f03-node-index">C</span><span data-hf-id="hf-9pvs" class="f03-node-label">FILE</span>
+            <span data-hf-id="hf-0qao" class="f03-receipt"><svg data-hf-id="hf-y6vd" viewBox="0 0 28 28" aria-hidden="true"><path data-hf-id="hf-gvpf" class="f03-check-path" id="03-agent-loop-check-3" d="M3 15 L10 22 L25 5" /></svg></span>
+          </div>
+        </div>
+
+        <div data-hf-id="hf-yxwh" class="f03-payoff" aria-label="See it. Then act.">
+          <div data-hf-id="hf-xxgm" class="f03-payoff-line" id="03-agent-loop-payoff-1">SEE IT.</div>
+          <div data-hf-id="hf-koeu" class="f03-payoff-line" id="03-agent-loop-payoff-2">THEN ACT.</div>
+        </div>
+        <div data-hf-id="hf-nero" class="f03-safe-rule"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script>
+    (() => {
+      const root = document.querySelector('[data-composition-id="03-agent-loop"]');
+      const byId = (id) => document.getElementById(id);
+      const tl = gsap.timeline({ paused: true });
+
+      root.querySelectorAll('.f03-draw-path, .f03-check-path').forEach((path) => {
+        const length = path.getTotalLength();
+        path.style.strokeDasharray = `${length}`;
+        path.style.strokeDashoffset = `${length}`;
+      });
+
+      const arc = byId('03-agent-loop-scan-arc');
+      const arcLength = arc.getTotalLength();
+      arc.style.strokeDasharray = `${arcLength * 0.22} ${arcLength * 0.78}`;
+      arc.style.strokeDashoffset = '0';
+
+      gsap.set(root.querySelectorAll('.f03-input-node, .f03-tool-node'), { opacity: 0 });
+      gsap.set(byId('03-agent-loop-status-see'), { opacity: 0 });
+      gsap.set(byId('03-agent-loop-status-reason'), { opacity: 0, y: 28 });
+      gsap.set(root.querySelectorAll('.f03-receipt'), { opacity: 0, scale: 0.75 });
+      gsap.set(root.querySelectorAll('.f03-payoff-line'), { opacity: 0 });
+
+      tl.fromTo(byId('03-agent-loop-core'),
+        { opacity: 0.24, scale: 0.97 },
+        { opacity: 1, scale: 1, duration: 0.45, ease: 'power2.out' },
+        0.08
+      );
+      tl.fromTo(byId('03-agent-loop-scan-beam'),
+        { y: 0, opacity: 0 },
+        { y: 1340, opacity: 0.38, duration: 2.35, ease: 'power1.inOut' },
+        0.12
+      );
+
+      [
+        ['03-agent-loop-input-1', '03-agent-loop-in-path-1', 0.28],
+        ['03-agent-loop-input-2', '03-agent-loop-in-path-2', 0.92],
+        ['03-agent-loop-input-3', '03-agent-loop-in-path-3', 1.56]
+      ].forEach(([nodeId, pathId, at]) => {
+        tl.fromTo(byId(nodeId),
+          { opacity: 0, x: -36 },
+          { opacity: 1, x: 0, duration: 0.42, ease: 'power2.out' },
+          at
+        );
+        tl.to(byId(pathId),
+          { strokeDashoffset: 0, duration: 0.62, ease: 'power2.out' },
+          at + 0.18
+        );
+      });
+
+      tl.fromTo(byId('03-agent-loop-status-see'),
+        { opacity: 0, y: 22 },
+        { opacity: 1, y: 0, duration: 0.32, ease: 'power2.out' },
+        2.62
+      );
+      tl.to(arc,
+        { strokeDashoffset: -arcLength * 2.2, rotation: 720, svgOrigin: '82 82', duration: 3.72, ease: 'none' },
+        2.65
+      );
+      tl.to(byId('03-agent-loop-core-dot'),
+        { scale: 1.5, duration: 0.34, ease: 'power2.out' },
+        3.15
+      );
+      tl.to(byId('03-agent-loop-core-dot'),
+        { scale: 1, duration: 0.34, ease: 'power2.in' },
+        3.49
+      );
+      tl.to(byId('03-agent-loop-status-see'),
+        { opacity: 0, y: -24, duration: 0.22, ease: 'power4.in' },
+        4.35
+      );
+      tl.fromTo(byId('03-agent-loop-status-reason'),
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.34, ease: 'power4.out' },
+        4.57
+      );
+      tl.to(byId('03-agent-loop-core-dot'),
+        { scale: 1.35, duration: 0.32, ease: 'power2.out' },
+        5.25
+      );
+      tl.to(byId('03-agent-loop-core-dot'),
+        { scale: 1, duration: 0.32, ease: 'power2.in' },
+        5.57
+      );
+      tl.to(arc, { opacity: 0.22, duration: 0.12, ease: 'none' }, 6.38);
+
+      [
+        ['03-agent-loop-tool-1', '03-agent-loop-out-path-1', '03-agent-loop-check-1', 6.52],
+        ['03-agent-loop-tool-2', '03-agent-loop-out-path-2', '03-agent-loop-check-2', 7.18],
+        ['03-agent-loop-tool-3', '03-agent-loop-out-path-3', '03-agent-loop-check-3', 7.84]
+      ].forEach(([nodeId, pathId, checkId, at]) => {
+        tl.to(byId(pathId),
+          { strokeDashoffset: 0, duration: 0.56, ease: 'power2.out' },
+          at
+        );
+        tl.fromTo(byId(nodeId),
+          { opacity: 0, x: 42 },
+          { opacity: 1, x: 0, duration: 0.38, ease: 'power2.out' },
+          at + 0.2
+        );
+        tl.to(byId(checkId).closest('.f03-receipt'),
+          { opacity: 1, scale: 1, duration: 0.26, ease: 'back.out(1.7)' },
+          at + 0.47
+        );
+        tl.to(byId(checkId),
+          { strokeDashoffset: 0, duration: 0.34, ease: 'power2.out' },
+          at + 0.55
+        );
+      });
+
+      tl.to(root.querySelectorAll('.f03-input-node'),
+        { opacity: 0.2, duration: 0.22, ease: 'power3.in' },
+        8.76
+      );
+      tl.fromTo(byId('03-agent-loop-payoff-1'),
+        { opacity: 0.15, scale: 1.2, filter: 'blur(10px)' },
+        { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.52, ease: 'expo.out' },
+        8.80
+      );
+      tl.fromTo(byId('03-agent-loop-payoff-2'),
+        { opacity: 0.15, scale: 1.2, filter: 'blur(10px)' },
+        { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 0.52, ease: 'expo.out' },
+        9.24
+      );
+
+      window.__timelines['03-agent-loop'] = tl;
+    })();
+  </script>
+</template>

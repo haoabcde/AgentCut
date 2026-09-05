@@ -611,6 +611,12 @@ interface TranscriptWord {
   normalizedText?: string;
 }
 
+interface CandidateSet {
+  detectorVersion: string;
+  evidenceContracts?: Array<"retained-comparison-v1">;
+  candidates: EditCandidate[];
+}
+
 interface EditCandidate {
   id: ID;
   sourceRanges: TimeRange[];
@@ -619,12 +625,20 @@ interface EditCandidate {
   risk: "low" | "medium" | "high";
   reasonCodes: Array<
     "silence" | "filler" | "stutter" | "repetition" | "false_start"
-    | "restatement" | "incomplete_sentence" | "breath" | "context_required"
+    | "restatement" | "correction" | "incomplete" | "manual"
   >;
   confidence: number;
   explanationZh: string;
+  evidence?: Array<{
+    role: "retained_comparison";
+    target: { kind: "words"; wordIds: ID[]; sourceRange: TimeRange };
+  }>;
   alternatives?: Array<{ sourceRanges: TimeRange[]; explanationZh: string }>;
 }
+
+`evidence` 与删除 `target` 语义不同：`retained_comparison` 是支持判断、但明确应保留的对照范围。两者都必须绑定同一 Transcript 的稳定 word IDs 与精确 source range；保留对照必须位于删除目标之后并落在 CandidateSet 绑定的 source clip 内。说明文案可以变化，但结构化证据不能由 UI 从文本反向猜测。
+
+新 CandidateSet 通过 `evidenceContracts: ["retained-comparison-v1"]` 显式声明结构化对照保证；声明后，任何 repetition/restatement/correction 缺少 `retained_comparison` 都必须 fail closed。`talking-head-mechanical/0.3.0` 与 `semantic-review/0.2/*` 发布时早于显式字段，因此 validator 仅把这两个已发布版本视为兼容性隐式声明。更旧 detector artifact 保持可读，但投影层必须标为 `legacy_missing`，不能事后从 `explanationZh` 伪造回填。安全语义以 artifact contract 为准，不应再依赖未来 detector 的命名规则。
 
 interface StyleSpec {
   id: ID;

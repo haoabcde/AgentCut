@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "0.0.0",
+  "project": {
+    "id": "project_legacy_001",
+    "name": "旧版口播工程",
+    "createdAt": "2026-07-01T08:00:00Z",
+    "updatedAt": "2026-07-01T08:00:00Z",
+    "activeSequenceId": "sequence_main",
+    "revision": 0
+  },
+  "assets": [
+    {
+      "id": "asset_legacy_camera",
+      "kind": "video",
+      "uri": "media/legacy-talking-head.mp4",
+      "contentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "availability": "online",
+      "provenance": {
+        "createdBy": { "kind": "user", "id": "local_user" },
+        "createdAt": "2026-07-01T08:00:00Z",
+        "reason": "旧版导入"
+      }
+    }
+  ],
+  "sequences": [
+    {
+      "id": "sequence_main",
+      "name": "主序列",
+      "canvas": { "width": 1080, "height": 1920, "background": "#000000" },
+      "frameRate": { "numerator": 30000, "denominator": 1001 },
+      "tracks": [
+        {
+          "id": "track_v1",
+          "kind": "video",
+          "name": "主画面",
+          "order": 0,
+          "locked": false,
+          "enabled": true,
+          "clips": [
+            {
+              "id": "clip_legacy_1",
+              "kind": "media",
+              "assetId": "asset_legacy_camera",
+              "streamIndex": 0,
+              "timelineRange": {
+                "start": { "value": 0, "rate": { "numerator": 30000, "denominator": 1001 } },
+                "duration": { "value": 300, "rate": { "numerator": 30000, "denominator": 1001 } }
+              },
+              "sourceRange": {
+                "start": { "value": 0, "rate": { "numerator": 30000, "denominator": 1001 } },
+                "duration": { "value": 300, "rate": { "numerator": 30000, "denominator": 1001 } }
+              },
+              "enabled": true,
+              "provenance": {
+                "createdBy": { "kind": "workflow", "id": "legacy_import" },
+                "createdAt": "2026-07-01T08:00:00Z",
+                "reason": "旧版主片段"
+              }
+            }
+          ],
+          "transitions": []
+        }
+      ],
+      "locks": [],
+      "markers": []
+    }
+  ]
+}

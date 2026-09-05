@@ -1,0 +1,163 @@
+{
+  "total_duration_s": 60,
+  "width": 1080,
+  "height": 1920,
+  "groups": [
+    {
+      "id": "caption-group-0",
+      "frame": 1,
+      "start": 0,
+      "end": 6.77,
+      "text": "这不是又一个只存在 API 里的模型。 DeepSeek 刚把它的眼睛和大脑，一起放进了开源仓库。",
+      "words": [
+        {
+          "id": "caption-word-0-0",
+          "text": "这不是又一个只存在 API 里的模型。",
+          "start": 0,
+          "end": 2.9
+        },
+        {
+          "id": "caption-word-0-1",
+          "text": "DeepSeek 刚把它的眼睛和大脑，一起放进了开源仓库。",
+          "start": 3,
+          "end": 6.65
+        }
+      ]
+    },
+    {
+      "id": "caption-group-1",
+      "frame": 2,
+      "start": 7,
+      "end": 16,
+      "text": "它叫 DeepSeek V4 Flash Vision Exp。 官方仓库开放了权重、提示编码和最小推理实现， 许可证是 MIT。",
+      "words": [
+        {
+          "id": "caption-word-1-0",
+          "text": "它叫 DeepSeek V4 Flash Vision Exp。",
+          "start": 7,
+          "end": 9.8
+        },
+        {
+          "id": "caption-word-1-1",
+          "text": "官方仓库开放了权重、提示编码和最小推理实现，",
+          "start": 9.9,
+          "end": 14.55
+        },
+        {
+          "id": "caption-word-1-2",
+          "text": "许可证是 MIT。",
+          "start": 14.65,
+          "end": 15.95
+        }
+      ]
+    },
+    {
+      "id": "caption-group-2",
+      "frame": 3,
+      "start": 16,
+      "end": 25,
+      "text": "它能读截图、图表和图片，再继续调用工具完成任务。 重点不是会看图， 而是看完之后还能行动。",
+      "words": [
+        {
+          "id": "caption-word-2-0",
+          "text": "它能读截图、图表和图片，再继续调用工具完成任务。",
+          "start": 16,
+          "end": 20.1
+        },
+        {
+          "id": "caption-word-2-1",
+          "text": "重点不是会看图，",
+          "start": 20.25,
+          "end": 22.2
+        },
+        {
+          "id": "caption-word-2-2",
+          "text": "而是看完之后还能行动。",
+          "start": 22.3,
+          "end": 24.88
+        }
+      ]
+    },
+    {
+      "id": "caption-group-3",
+      "frame": 4,
+      "start": 26,
+      "end": 36.74,
+      "text": "官方自测中，ApexBench 是三十六点五对三十九点四， Chartography 是六十四点三对六十五。 另外两项，DeepSeek 还略高。",
+      "words": [
+        {
+          "id": "caption-word-3-0",
+          "text": "官方自测中，ApexBench 是三十六点五对三十九点四，",
+          "start": 26,
+          "end": 29.55
+        },
+        {
+          "id": "caption-word-3-1",
+          "text": "Chartography 是六十四点三对六十五。",
+          "start": 29.65,
+          "end": 33
+        },
+        {
+          "id": "caption-word-3-2",
+          "text": "另外两项，DeepSeek 还略高。",
+          "start": 33.1,
+          "end": 36.62
+        }
+      ]
+    },
+    {
+      "id": "caption-group-4",
+      "frame": 5,
+      "start": 39,
+      "end": 49.64,
+      "text": "但要注意：这是 DeepSeek 官方基准，不是第三方共识。 它仍是实验模型， 约三千零五十亿参数， 开源也不等于普通电脑能轻松运行。",
+      "words": [
+        {
+          "id": "caption-word-4-0",
+          "text": "但要注意：这是 DeepSeek 官方基准，不是第三方共识。",
+          "start": 39,
+          "end": 43.45
+        },
+        {
+          "id": "caption-word-4-1",
+          "text": "它仍是实验模型，",
+          "start": 43.55,
+          "end": 45.05
+        },
+        {
+          "id": "caption-word-4-2",
+          "text": "约三千零五十亿参数，",
+          "start": 45.15,
+          "end": 46.95
+        },
+        {
+          "id": "caption-word-4-3",
+          "text": "开源也不等于普通电脑能轻松运行。",
+          "start": 47.05,
+          "end": 49.52
+        }
+      ]
+    },
+    {
+      "id": "caption-group-5",
+      "frame": 6,
+      "start": 50,
+      "end": 60,
+      "text": "真正重要的是，顶级多模态 Agent 正从封闭接口走向可检查、可改造、可部署。 下一场竞争，是谁能把眼睛、工具和行动连成闭环。",
+      "words": [
+        {
+          "id": "caption-word-5-0",
+          "text": "真正重要的是，顶级多模态 Agent 正从封闭接口走向可检查、可改造、可部署。",
+          "start": 50,
+          "end": 55.7
+        },
+        {
+          "id": "caption-word-5-1",
+          "text": "下一场竞争，是谁能把眼睛、工具和行动连成闭环。",
+          "start": 55.8,
+          "end": 59.88
+        }
+      ]
+    }
+  ]
+}

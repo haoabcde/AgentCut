@@ -1,0 +1,250 @@
+{
+  "schemaVersion": "1.0",
+  "project": {
+    "id": "project_p1_real_dogfood",
+    "name": "P1 真实中文口播 Dogfood",
+    "revision": 9,
+    "sequenceId": "sequence_main",
+    "transcriptId": "transcript_0f9916d66ea6215b5ec468d5",
+    "sourceAssetId": "asset_e536a169baaaf1e62462c9b0",
+    "sourceSha256": "sha256:e536a169baaaf1e62462c9b0ce2def85e0a6e18f39359f395af7ad2dadeecf64"
+  },
+  "review": {
+    "completed": false,
+    "pendingCandidateIds": [
+      "candidate_0f372ba9d83dc0d6866c1927",
+      "candidate_b6da9657b79cc8dbd85a2ce8",
+      "candidate_67e199d2946f9169ad5de127",
+      "candidate_c865cc7b23057d8afc5710a8"
+    ]
+  },
+  "candidates": [
+    {
+      "candidateId": "candidate_0f372ba9d83dc0d6866c1927",
+      "decision": "suggest_remove",
+      "risk": "medium",
+      "reasonCodes": [
+        "silence"
+      ],
+      "confidence": 0.85,
+      "explanationZh": "检测到停顿，已在两侧各保留 150ms 呼吸余量。",
+      "targetKind": "gap",
+      "wordIds": [],
+      "sourceStartMicros": 13212542,
+      "durationMicros": 400833,
+      "text": "势[停顿]的",
+      "state": "candidate_remove",
+      "humanLabel": null,
+      "humanNote": null
+    },
+    {
+      "candidateId": "candidate_057c688dd35dca87ce43b2e5",
+      "decision": "suggest_remove",
+      "risk": "high",
+      "reasonCodes": [
+        "restatement"
+      ],
+      "confidence": 0.95,
+      "explanationZh": "本地 AI 语义审阅：建议删前一段“引导青年学子树立将论文写在祖国大地上的理念为国家发展、作识”，保留后一段“引导青年学子树立将论文写在祖国大地上的理念为国家的发展、”。前后两段表达高度重合，属于对‘引导青年学子...’这一句的重新表述。保留了表达更完整、语速更稳的后一遍。",
+      "targetKind": "words",
+      "wordIds": [
+        "word_4e697a9cd545b4dee501b804",
+        "word_f6461ca4ef375cdc2103425f",
+        "word_ef752d596b7f6cb95661fe42",
+        "word_a3491b2800caeb33d851daa6",
+        "word_3381f13a2f34253e57c4b3d5",
+        "word_d76e34d0706c5e98364bfe7e",
+        "word_f69ad9ce6f2b901e89da4501",
+        "word_2517f651f988ca595973da0d",
+        "word_088f831d11cf848a1cc8db1b",
+        "word_dc5c06cec9379e5b32e2ecb2",
+        "word_ee232c7964dfa0ca19526027",
+        "word_9f1ed9a20499bb8d0b885314",
+        "word_e117472f6961ede67ab28434",
+        "word_b92c37f7eb47b699746cf192",
+        "word_bdc54e7b8b7a85cb2aab809f",
+        "word_c8ef73b87eb819f28717e113",
+        "word_2f60a1e65013f5acc26e0227",
+        "word_f66308a17a98d40f2598457a",
+        "word_99dbc1026aca87a2a3f649c4",
+        "word_9dadd6f8690c9fd03b5a59e1",
+        "word_3c5408af1636a618da179bfe",
+        "word_39b31f0423e3ef1ba0dbeb3c",
+        "word_f193758b1a490f967b37cb7a",
+        "word_6e955e6882e72474c74a31a4",
+        "word_b900b3c698f8713affe50bb2",
+        "word_5a74de170ccc42cb8f515401",
+        "word_62e549aa13e1b51900bd6476",
+        "word_7b46846bb675dbf6a7b04921"
+      ],
+      "sourceStartMicros": 43780000,
+      "durationMicros": 7020000,
+      "text": "引导青年学子树立将论文写在祖国大地上的理念为国家发展、作识",
+      "state": "committed_deleted",
+      "transactionId": "tx_review_accept_57afe5d2-2303-4038-bfc3-15fdfe86aec6",
+      "committedBy": {
+        "kind": "user",
+        "id": "local_user"
+      },
+      "humanLabel": null,
+      "humanNote": null
+    },
+    {
+      "candidateId": "candidate_7973f05ab0617830683655f1",
+      "decision": "definite_remove",
+      "risk": "low",
+      "reasonCodes": [
+        "silence"
+      ],
+      "confidence": 0.99,
+      "explanationZh": "检测到停顿，已在两侧各保留 150ms 呼吸余量。",
+      "targetKind": "gap",
+      "wordIds": [],
+      "sourceStartMicros": 50891021,
+      "durationMicros": 2507396,
+      "text": "作[停顿]导",
+      "state": "committed_deleted",
+      "transactionId": "tx_review_accept_bf8af587-3449-4367-aff0-2cbafd7b9e56",
+      "committedBy": {
+        "kind": "user",
+        "id": "local_user"
+      },
+      "humanLabel": null,
+      "humanNote": null
+    },
+    {
+      "candidateId": "candidate_16067fcfdfa0ae2f44230028",
+      "decision": "definite_remove",
+      "risk": "low",
+      "reasonCodes": [
+        "silence"
+      ],
+      "confidence": 0.99,
+      "explanationZh": "检测到停顿，已在两侧各保留 150ms 呼吸余量。",
+      "targetKind": "gap",
+      "wordIds": [],
+      "sourceStartMicros": 66994437,
+      "durationMicros": 1635521,
+      "text": "当[停顿]最",
+      "state": "committed_deleted",
+      "transactionId": "tx_review_accept_ed1f4abf-e0c3-4663-9f99-2cd4164430bf",
+      "committedBy": {
+        "kind": "user",
+        "id": "local_user"
+      },
+      "humanLabel": null,
+      "humanNote": null
+    },
+    {
+      "candidateId": "candidate_b6da9657b79cc8dbd85a2ce8",
+      "decision": "suggest_remove",
+      "risk": "medium",
+      "reasonCodes": [
+        "silence"
+      ],
+      "confidence": 0.85,
+      "explanationZh": "检测到停顿，已在两侧各保留 150ms 呼吸余量。",
+      "targetKind": "gap",
+      "wordIds": [],
+      "sourceStartMicros": 68989562,
+      "durationMicros": 763501,
+      "text": "当[停顿]最",
+      "state": "candidate_remove",
+      "humanLabel": null,
+      "humanNote": null
+    },
+    {
+      "candidateId": "candidate_67e199d2946f9169ad5de127",
+      "decision": "suggest_remove",
+      "risk": "medium",
+      "reasonCodes": [
+        "silence"
+      ],
+      "confidence": 0.85,
+      "explanationZh": "检测到停顿，已在两侧各保留 150ms 呼吸余量。",
+      "targetKind": "gap",
+      "wordIds": [],
+      "sourceStartMicros": 73732104,
+      "durationMicros": 660375,
+      "text": "这个[停顿]边",
+      "state": "candidate_remove",
+      "humanLabel": null,
+      "humanNote": null
+    },
+    {
+      "candidateId": "candidate_c865cc7b23057d8afc5710a8",
+      "decision": "suggest_remove",
+      "risk": "high",
+      "reasonCodes": [
+        "repetition"
+      ],
+      "confidence": 0.040985107421875,
+      "explanationZh": "检测到连续完全重复“下边这个我再看一下”，但相关文字识别置信度较低，必须试听确认，不能自动删除。",
+      "targetKind": "words",
+      "wordIds": [
+        "word_7dc17211fede6f2e9432ad64",
+        "word_715eab462dd550014085a85a",
+        "word_ebbfeb54b73af3cee3da6d5e",
+        "word_2e38f4eba862f5d56eedcebd",
+        "word_0ef40975041bf9ec455f746a",
+        "word_dd2ec3d2988bb08565c91150"
+      ],
+      "sourceStartMicros": 74280000,
+      "durationMicros": 2080000,
+      "text": "下边这个我再看一下",
+      "state": "candidate_remove",
+      "humanLabel": null,
+      "humanNote": null
+    }
+  ],
+  "boundaries": [
+    {
+      "boundaryId": "boundary_asset_e536a169baaaf1e62462c9b0_43780000_50800000",
+      "assetId": "asset_e536a169baaaf1e62462c9b0",
+      "timelineMicros": 43780000,
+      "leftSourceEndMicros": 43780000,
+      "rightSourceStartMicros": 50800000,
+      "removedDurationMicros": 7020000,
+      "candidateIds": [
+        "candidate_057c688dd35dca87ce43b2e5"
+      ],
+      "humanUsable": null,
+      "humanIssueCodes": [],
+      "humanNote": null
+    },
+    {
+      "boundaryId": "boundary_asset_e536a169baaaf1e62462c9b0_50891021_53398417",
+      "assetId": "asset_e536a169baaaf1e62462c9b0",
+      "timelineMicros": 43871021,
+      "leftSourceEndMicros": 50891021,
+      "rightSourceStartMicros": 53398417,
+      "removedDurationMicros": 2507396,
+      "candidateIds": [
+        "candidate_7973f05ab0617830683655f1"
+      ],
+      "humanUsable": null,
+      "humanIssueCodes": [],
+      "humanNote": null
+    },
+    {
+      "boundaryId": "boundary_asset_e536a169baaaf1e62462c9b0_66994437_68629958",
+      "assetId": "asset_e536a169baaaf1e62462c9b0",
+      "timelineMicros": 57467041,
+      "leftSourceEndMicros": 66994437,
+      "rightSourceStartMicros": 68629958,
+      "removedDurationMicros": 1635521,
+      "candidateIds": [
+        "candidate_16067fcfdfa0ae2f44230028"
+      ],
+      "humanUsable": null,
+      "humanIssueCodes": [],
+      "humanNote": null
+    }
+  ],
+  "derived": {
+    "definiteRemovePredicted": 2,
+    "definiteRemoveCommitted": 2,
+    "highRiskAutoDeletedCandidateIds": []
+  },
+  "export": null
+}

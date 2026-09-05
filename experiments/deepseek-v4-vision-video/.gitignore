@@ -1,0 +1,9 @@
+.venv/
+.media/
+audio_meta.json
+renders/
+snapshots/
+node_modules/
+*.mp4
+*.wav
+*.mp3

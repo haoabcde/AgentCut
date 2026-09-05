@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 短视频切片 Demo</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 32px 20px;
+      background: #0f172a;
+      color: #f8fafc;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 28px; margin: 0 0 8px; }
+    .subtitle { color: #94a3b8; margin: 0 0 24px; }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      font-size: 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover:not(:disabled) { background: #2563eb; }
+    button:disabled {
+      background: #475569;
+      cursor: not-allowed;
+    }
+    .progress-wrap {
+      margin-top: 24px;
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+    }
+    .progress-bar {
+      height: 12px;
+      background: #334155;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #3b82f6, #60a5fa);
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+    .log {
+      margin-top: 16px;
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 16px;
+      min-height: 120px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #cbd5e1;
+      overflow-y: auto;
+      max-height: 240px;
+    }
+    .clips { margin-top: 32px; }
+    .clip {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .clip h3 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      color: #e2e8f0;
+    }
+    video {
+      width: 100%;
+      border-radius: 12px;
+      display: block;
+      background: #000;
+    }
+    .download {
+      margin-top: 12px;
+      display: inline-block;
+      color: #60a5fa;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .download:hover { text-decoration: underline; }
+    .error { color: #f87171; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>AI 短视频切片 Demo</h1>
+    <p class="subtitle">把一段英文播客自动剪成 3 条带悬浮字幕的竖版短视频</p>
+    <button id="runBtn">使用内置样例生成</button>
+
+    <div class="progress-wrap" id="progressWrap" style="display: none;">
+      <div class="progress-label">
+        <span id="progressStage">准备中...</span>
+        <span id="progressPercent">0%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <div class="log" id="log">点击按钮开始生成...</div>
+
+    <div class="clips" id="clips"></div>
+  </div>
+
+  <script>
+    const logEl = document.getElementById("log");
+    const clipsEl = document.getElementById("clips");
+    const runBtn = document.getElementById("runBtn");
+
+    function renderLogs(logs) {
+      if (!logs || logs.length === 0) return;
+      logEl.textContent = logs
+        .map((entry) => {
+          const detail = typeof entry.detail === "string" ? entry.detail : JSON.stringify(entry.detail);
+          return `[${entry.stage}] ${detail}`;
+        })
+        .join("\n");
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function renderClips(highlights) {
+      clipsEl.innerHTML = highlights
+        .map((highlight, index) => {
+          const number = String(index + 1).padStart(2, "0");
+          const duration = (highlight.end - highlight.start).toFixed(1);
+          return `
+            <div class="clip">
+              <h3>Clip ${index + 1} · ${highlight.start.toFixed(1)}s - ${highlight.end.toFixed(1)}s（${duration}s）</h3>
+              <video controls src="/clips/clip-${number}/short.mp4"></video>
+              <a class="download" href="/clips/clip-${number}/short.mp4" download="clip-${number}.mp4">⬇ 下载 clip-${number}.mp4</a>
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    async function pollStatus() {
+      try {
+        const response = await fetch("/api/status");
+        const data = await response.json();
+        renderLogs(data.logs);
+
+        if (data.status === "done") {
+          runBtn.disabled = false;
+          runBtn.textContent = "再次生成";
+          renderClips(data.report.highlights);
+          return;
+        }
+
+        if (data.status === "error") {
+          runBtn.disabled = false;
+          runBtn.textContent = "重试";
+          logEl.innerHTML += `\n\n<span class="error">错误：${data.error}</span>`;
+          return;
+        }
+
+        setTimeout(pollStatus, 1000);
+      } catch (error) {
+        runBtn.disabled = false;
+        runBtn.textContent = "重试";
+        logEl.innerHTML += `\n\n<span class="error">轮询失败：${error.message}</span>`;
+      }
+    }
+
+    runBtn.addEventListener("click", async () => {
+      clipsEl.innerHTML = "";
+      logEl.textContent = "启动中...";
+      runBtn.disabled = true;
+      runBtn.textContent = "生成中（约 30-60 秒）...";
+
+      try {
+        const response = await fetch("/api/run", { method: "POST" });
+        if (response.status === 202) {
+          pollStatus();
+        } else {
+          const data = await response.json();
+          throw new Error(data.error || `HTTP ${response.status}`);
+        }
+      } catch (error) {
+        runBtn.disabled = false;
+        runBtn.textContent = "重试";
+        logEl.innerHTML += `\n\n<span class="error">启动失败：${error.message}</span>`;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -6,9 +6,22 @@
   "packageManager": "pnpm@11.9.0",
   "scripts": {
     "build": "pnpm -r build",
+    "agent": "node scripts/agentcut-agent.mjs",
+    "mcp": "node scripts/agentcut-mcp.mjs",
+    "alpha:audit": "pnpm --filter @agentcut/alpha-gate build && node scripts/alpha-audit.mjs",
+    "alpha:evidence": "pnpm --filter @agentcut/alpha-gate build && node scripts/alpha-evidence.mjs",
+    "alpha:gate": "pnpm --filter @agentcut/alpha-gate build && node scripts/alpha-gate.mjs",
+    "alpha:verify": "pnpm --filter @agentcut/alpha-gate build && node scripts/alpha-correctness.mjs",
+    "alpha:collect": "pnpm --filter @agentcut/alpha-gate build && node scripts/alpha-collect.mjs",
+    "roughcut": "pnpm build && node scripts/roughcut.mjs",
+    "studio": "node scripts/start-studio.mjs",
     "typecheck": "pnpm build && pnpm -r typecheck",
     "test": "pnpm build && pnpm -r test",
-    "check": "pnpm build && pnpm -r typecheck && pnpm -r test"
+    "check": "pnpm build && pnpm -r typecheck && pnpm -r test",
+    "alpha:new-sample": "node scripts/new-alpha-sample.mjs",
+    "demo:shorts": "node demos/short-video-generator/scripts/run-demo.mjs --synthetic",
+    "demo:shorts:custom": "node demos/short-video-generator/scripts/run-demo.mjs",
+    "demo:shorts:web": "node demos/short-video-generator/scripts/serve.mjs"
   },
   "devDependencies": {
     "@types/node": "26.1.1",

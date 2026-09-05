@@ -1,0 +1,13 @@
+{
+  "name": "@agentcut/short-video-generator-demo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Demo: turn long podcasts into short subtitled clips using AgentCut ASR + ffmpeg",
+  "scripts": {
+    "demo": "node scripts/run-demo.mjs",
+    "demo:synthetic": "node scripts/run-demo.mjs --synthetic"
+  },
+  "devDependencies": {},
+  "dependencies": {}
+}

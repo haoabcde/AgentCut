@@ -1,0 +1,151 @@
+{
+  "schemaVersion": "1.0",
+  "projects": [
+    {
+      "projectId": "project_p1_real_dogfood_sample_02",
+      "sourceSha256": "sha256:88a47f3d9c40d0dd3dbd25332848ed19380f477f87535dba4f370cd2b613fd21",
+      "auditDraft": "benchmarks/alpha-gate/audits/sample-02-r4.draft.json",
+      "evidenceBundle": {
+        "path": "bundles/project_p1_real_dogfood_sample_02-r4-a4631cb70bb8.evidence.json",
+        "sha256": "sha256:a4631cb70bb8a56d3a9d423ed5b00be6585dc056920520ff6147d5e6bf286b41",
+        "canonicalProjectId": "project_p1_real_dogfood",
+        "projectRevision": 4
+      },
+      "authorization": {
+        "confirmed": true,
+        "basis": "user_supplied_for_testing",
+        "evidence": "../../docs/alpha-authorizations/project_p1_real_dogfood_sample_02.md",
+        "sha256": "sha256:92f5d3ed080db07331eb6cd0415303f0f0b9dcde8b3a6bdc27c35c95e6e38d8e"
+      },
+      "reviewCompleted": false,
+      "export": {
+        "succeeded": false
+      },
+      "candidates": {
+        "definiteRemovePredicted": 4,
+        "highRiskAutoDeleted": 0
+      },
+      "boundaries": {
+        "evaluated": 0
+      },
+      "correctness": {
+        "undo": {
+          "evaluated": 0,
+          "passed": 0
+        },
+        "restart": {
+          "evaluated": 0,
+          "passed": 0
+        },
+        "idempotency": {
+          "evaluated": 0,
+          "passed": 0
+        },
+        "revisionConflict": {
+          "evaluated": 0,
+          "passed": 0
+        }
+      },
+      "coverageClasses": [
+        "mandarin"
+      ]
+    },
+    {
+      "projectId": "project_p1_real_dogfood_sample_03",
+      "sourceSha256": "sha256:e536a169baaaf1e62462c9b0ce2def85e0a6e18f39359f395af7ad2dadeecf64",
+      "auditDraft": "benchmarks/alpha-gate/audits/sample-03-r9.draft.json",
+      "evidenceBundle": {
+        "path": "bundles/project_p1_real_dogfood_sample_03-r9-a1f5d6e1eb5e.evidence.json",
+        "sha256": "sha256:a1f5d6e1eb5e464f18922397ac638edc73e32414eb8a9ba6e3e29b2dde7166bc",
+        "canonicalProjectId": "project_p1_real_dogfood",
+        "projectRevision": 9
+      },
+      "authorization": {
+        "confirmed": true,
+        "basis": "user_supplied_for_testing",
+        "evidence": "../../docs/alpha-authorizations/project_p1_real_dogfood_sample_03.md",
+        "sha256": "sha256:7fb828d317f789a7fa40fa6a2ac0f39e6d0ba39c4f75635cfa12ac6d850e440c"
+      },
+      "reviewCompleted": false,
+      "export": {
+        "succeeded": false
+      },
+      "candidates": {
+        "definiteRemovePredicted": 2,
+        "highRiskAutoDeleted": 0
+      },
+      "boundaries": {
+        "evaluated": 0
+      },
+      "correctness": {
+        "undo": {
+          "evaluated": 0,
+          "passed": 0
+        },
+        "restart": {
+          "evaluated": 0,
+          "passed": 0
+        },
+        "idempotency": {
+          "evaluated": 0,
+          "passed": 0
+        },
+        "revisionConflict": {
+          "evaluated": 0,
+          "passed": 0
+        }
+      },
+      "coverageClasses": [
+        "mandarin"
+      ]
+    },
+    {
+      "projectId": "sample_01_screen_recording",
+      "sourceSha256": "sha256:9a2755b480047b80c21d0050fd214836674aaf33dfd168a2fff9393b28dd1ad2",
+      "evidenceBundle": {
+        "path": "bundles/sample_01_screen_recording-r5-94c295a9f8b1.evidence.json",
+        "sha256": "sha256:94c295a9f8b1dfc551842fbc64382f28fe520c7b5a883c87d6b728d32289f9f1",
+        "canonicalProjectId": "project_p1_real_dogfood",
+        "projectRevision": 5
+      },
+      "coverageClasses": [
+        "screen-recording"
+      ],
+      "authorization": {
+        "confirmed": true,
+        "basis": "user_supplied_for_testing",
+        "evidence": "../../docs/alpha-authorizations/sample_01_screen_recording.md",
+        "sha256": "sha256:3e9d089a453ca1ae190fe1c36fa4a9e9ba988d085e6666d7acc8617af92e719f"
+      },
+      "reviewCompleted": false,
+      "export": {
+        "succeeded": false
+      },
+      "candidates": {
+        "definiteRemovePredicted": 1,
+        "highRiskAutoDeleted": 0
+      },
+      "boundaries": {
+        "evaluated": 1
+      },
+      "correctness": {
+        "undo": {
+          "evaluated": 0,
+          "passed": 0
+        },
+        "restart": {
+          "evaluated": 0,
+          "passed": 0
+        },
+        "idempotency": {
+          "evaluated": 0,
+          "passed": 0
+        },
+        "revisionConflict": {
+          "evaluated": 0,
+          "passed": 0
+        }
+      }
+    }
+  ]
+}

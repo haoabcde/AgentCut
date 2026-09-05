@@ -66,7 +66,127 @@
     }
   ],
   "styleSpecs": [],
-  "artifacts": [],
+  "artifacts": [
+    {
+      "id": "transcript_main_001",
+      "kind": "transcript",
+      "assetId": "asset_camera_a",
+      "language": "zh-CN",
+      "audioStreamIndex": 0,
+      "words": [
+        {
+          "id": "word_001",
+          "text": "大家好",
+          "sourceRange": {
+            "start": { "value": 1000, "rate": { "numerator": 1000, "denominator": 1 } },
+            "duration": { "value": 600, "rate": { "numerator": 1000, "denominator": 1 } }
+          },
+          "confidence": 0.99
+        },
+        {
+          "id": "word_002",
+          "text": "嗯",
+          "sourceRange": {
+            "start": { "value": 1700, "rate": { "numerator": 1000, "denominator": 1 } },
+            "duration": { "value": 200, "rate": { "numerator": 1000, "denominator": 1 } }
+          },
+          "confidence": 0.98
+        },
+        {
+          "id": "word_003",
+          "text": "今天",
+          "sourceRange": {
+            "start": { "value": 2000, "rate": { "numerator": 1000, "denominator": 1 } },
+            "duration": { "value": 400, "rate": { "numerator": 1000, "denominator": 1 } }
+          },
+          "confidence": 0.99
+        },
+        {
+          "id": "word_004",
+          "text": "我们聊聊 Agent",
+          "normalizedText": "我们聊聊Agent",
+          "sourceRange": {
+            "start": { "value": 2500, "rate": { "numerator": 1000, "denominator": 1 } },
+            "duration": { "value": 900, "rate": { "numerator": 1000, "denominator": 1 } }
+          },
+          "confidence": 0.96
+        }
+      ],
+      "provenance": {
+        "createdBy": { "kind": "workflow", "id": "asr_benchmark_v1" },
+        "createdAt": "2026-07-17T08:00:00Z",
+        "reason": "中文口播逐词转写"
+      }
+    },
+    {
+      "id": "candidate_set_main_001",
+      "kind": "deletionCandidateSet",
+      "transcriptArtifactId": "transcript_main_001",
+      "sequenceId": "sequence_main",
+      "clipId": "clip_take_1",
+      "projectRevision": 0,
+      "detectorVersion": "mechanical-candidates/0.1.0",
+      "candidates": [
+        {
+          "id": "candidate_filler_001",
+          "target": {
+            "kind": "words",
+            "wordIds": ["word_002"],
+            "sourceRange": {
+              "start": { "value": 1700, "rate": { "numerator": 1000, "denominator": 1 } },
+              "duration": { "value": 200, "rate": { "numerator": 1000, "denominator": 1 } }
+            }
+          },
+          "reasonCodes": ["filler"],
+          "decision": "definite_remove",
+          "risk": "low",
+          "confidence": 0.98,
+          "explanationZh": "独立语气词，删除后不改变句意。"
+        },
+        {
+          "id": "candidate_silence_001",
+          "target": {
+            "kind": "gap",
+            "sourceRange": {
+              "start": { "value": 1600, "rate": { "numerator": 1000, "denominator": 1 } },
+              "duration": { "value": 100, "rate": { "numerator": 1000, "denominator": 1 } }
+            },
+            "previousWordId": "word_001",
+            "nextWordId": "word_002"
+          },
+          "reasonCodes": ["silence"],
+          "decision": "suggest_keep",
+          "risk": "medium",
+          "confidence": 0.75,
+          "explanationZh": "短停顿可能维持自然呼吸，默认保留。"
+        }
+      ],
+      "provenance": {
+        "createdBy": { "kind": "workflow", "id": "talking_head_candidates_v1" },
+        "createdAt": "2026-07-17T08:00:00Z",
+        "reason": "生成第一版口播删除候选",
+        "sourceArtifactIds": ["transcript_main_001"]
+      }
+    },
+    {
+      "id": "proposal_main_001",
+      "kind": "editProposal",
+      "candidateSetArtifactId": "candidate_set_main_001",
+      "projectRevision": 0,
+      "selectedCandidateIds": ["candidate_filler_001"],
+      "estimatedRemovedDuration": {
+        "value": 200,
+        "rate": { "numerator": 1000, "denominator": 1 }
+      },
+      "payloadHash": "sha256:d9c5bcb425529afcb4497c4578c1df3f18321acace0fee0473a568a032b0560b",
+      "provenance": {
+        "createdBy": { "kind": "agent", "id": "codex" },
+        "createdAt": "2026-07-17T08:00:00Z",
+        "reason": "提交低风险语气词删除方案",
+        "sourceArtifactIds": ["candidate_set_main_001"]
+      }
+    }
+  ],
   "exportPresets": [],
   "versions": [],
   "history": { "headRevision": 0, "records": [] }

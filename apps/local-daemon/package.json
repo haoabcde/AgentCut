@@ -1,0 +1,21 @@
+{
+  "name": "@agentcut/local-daemon",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run src",
+    "dev": "node --enable-source-maps dist/cli.js"
+  },
+  "dependencies": {
+    "@agentcut/alpha-gate": "workspace:*",
+    "@agentcut/candidate-engine": "workspace:*",
+    "@agentcut/edit-commands": "workspace:*",
+    "@agentcut/project-store": "workspace:*",
+    "@agentcut/render-engine": "workspace:*",
+    "@agentcut/review-projection": "workspace:*",
+    "@agentcut/timeline-schema": "workspace:*"
+  }
+}

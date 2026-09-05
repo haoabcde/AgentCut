@@ -46,6 +46,17 @@ flowchart LR
 | 14. Preview/QC | revision、preset | preview、quality report | browser render、FFmpeg sample、silence/cut/overlap/font checks | 关键问题需用户决定 | 精确预览不支持则生成 proxy preview | revision + renderer build | 本地；只渲染变化窗口 |
 | 15. Version/Export | 通过 QC 的 revision | named version、MP4/report | FFmpeg compiler | 最终 preset/覆盖文件确认 | 临时文件；失败不覆盖旧 export | version + preset 可复用中间段 | 硬编失败回退软编并更新估时 |
 
+### 3.1 第一阶段审阅界面
+
+- Transcript 是第一阶段的主编辑表面，播放器、文稿和底层 source range 双向同步；点击任意文字跳转并播放对应原片。
+- `proposed_remove` 只做背景标记并显示原因类别，不提前伪装成已经删除。
+- transaction 提交后，对应文字变为低对比度删除线，但仍留在原文位置；点击可试听原始范围、查看 Agent evidence 或作为新 transaction 恢复。
+- 停顿、语气词、重复/重说分别显示数量并可筛选；批量应用前展示预计删除时长和风险分布。
+- 低/中风险候选可在「批量审阅」模式逐项勾选后按**一次可恢复事务**成批删除（一个 revision、一次 undo，恢复时整批还原并在界面明示）；高风险候选永远不进入批量，必须逐项循环试听、勾选确认后单独提交。
+- 高风险候选不能混入“一键删除全部”；锁定文字、数字、否定词、专名与低边界置信内容默认保留。
+- 不同 detector 的候选若 source range 重叠，不能按队列顺序独立执行。审阅层先形成连通冲突组，以高风险语义/完整文字候选为主项；用户决定主项时同事务解决其余替代项，恢复也整组恢复。这样不能因为先删一个带呼吸余量的 gap 而让后续重复候选变成半个词或不可编辑范围。
+- 删除线是状态表达而不是直接修改 DOM 文本。每段状态必须来自 revision-bound candidate/command，刷新和重启后可从 project store 重建。
+
 ## 4. 候选生成细节
 
 ### 4.1 低风险
@@ -74,7 +85,7 @@ exact coverage proof > semantic similarity
 
 自动模式策略草案：
 
-- `definite_remove && low && confidence >= calibrated_threshold`：可自动应用。
+- `definite_remove && low`：可自动应用。2026-08-11 起该集合只含高置信填充词（嗯/呃/额，confidence ≥0.85、时长 ≤800ms）；停顿无论长短一律 `suggest_remove`，不自动删（precision 可审计性修复，见开发记录同日条目）。
 - medium：默认建议删除，不自动。
 - high：默认建议保留，只有用户逐项批准才删。
 - 任意 detector 分歧、时间边界低置信、锁冲突：提升风险。

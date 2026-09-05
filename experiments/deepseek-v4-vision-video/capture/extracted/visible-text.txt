@@ -1,0 +1,18 @@
+# DeepSeek-V4-Flash-Vision-Exp 模型已开源，多模态 Agent 能力接近 Opus-4.8
+
+用户希望制作一条从主题出发、以文字与动效为主要视觉的中文视频。
+
+已核验的事实口径：
+
+1. DeepSeek 于 2026-08-21 在 API 平台上线实验性多模态模型 DeepSeek-V4-Flash-Vision-Exp。
+2. 2026-09-01 核验时，DeepSeek 官方 Hugging Face 账号已经开放该模型权重、tokenizer、prompt encoding 和最小 PyTorch 推理实现，许可证为 MIT。
+3. 官方模型卡标注模型规模约 305B 参数。
+4. DeepSeek 官方称其在多模态 Agent 基准上接近 Opus-4.8；这是官方自测口径，不是独立第三方结论。
+5. 官方表格中的代表性数据：ApexBench Pass@1 为 36.5 对 39.4；Agents' Last Exam 为 27.3 对 25.7；Chartography 为 64.3 对 65.0；ZeroBench Pass@5 为 35.0 对 34.0。
+6. 官方 API 支持图文混合输入，支持 Chat Completions、Messages 和 Responses；单张图片最多转换为 384 tokens，按 V4-Flash 价格计费。
+7. 模型仍是 experimental；305B 参数意味着虽然权重开放，但本地部署并不轻量。
+
+来源：
+- https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-Vision-Exp
+- https://api-docs.deepseek.com/zh-cn/news/news260821/
+- https://api-docs.deepseek.com/guides/vision/
