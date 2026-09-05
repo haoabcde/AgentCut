@@ -1,6 +1,8 @@
 # AgentCut
 
 > **大目标**：让"任何 AI Agent 安全地驱动任何视频编辑器"成为行业默认能力——本协议成为这件事的开放标准（类比 LSP 之于编程语言）。可验证终点与反目标见 docs/19 §0。
+>
+> 进入本仓库的 Agent 请先读 [GOAL.md](./GOAL.md)（长程目标与自主推进规则）。
 
 > 2026-09-06 起本仓库转向 **Agent 剪辑协议** 路线：目标产物是 MIT 开源的、不绑定任何编辑器的时间线 IR + 命令协议、参考宿主与一致性测试套件。口播剪辑产品已拆分为独立的 **TalkCut**（`~/Developer/talkcut`，私有），本仓库中的 studio / asr / candidate / render / alpha-gate 等产品层代码为拆分时点快照，将按 [docs/19 协议化重构总体计划](./docs/19-protocol-program-plan.md) 剥离，不再演进。背景与竞品分析见 [docs/18 战略复盘](./docs/18-strategy-review-2026-09.md)。
 
