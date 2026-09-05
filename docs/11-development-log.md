@@ -2,6 +2,31 @@
 
 本文件记录已经实际落地的产品、架构和工程变更。每次有效修改都应同步更新，以便后续 Agent 和开发者区分已验证事实、执行假设与待完成事项。
 
+## 2026-09-06：P0 归属清理与冻结完成
+
+### 目标
+
+执行 docs/19 P0：核实两仓产品层归属、清理 AgentCut 工作区、冻结产品层演进。
+
+### 实际改动
+
+- **逐文件三方比对**（AgentCut 工作区 ↔ TalkCut 当前状态，按拆分时实际改名规则规范化后比对）：packages/apps 共 195 个文件，166 个一致；差异 29 个文件中 25 个纯为小写改名残留（`agentcut-` 临时目录前缀、产物前缀、授权 marker、凭据脚本名），无功能差异；4 个（studio App.tsx / TranscriptPanel.tsx/.test.tsx / styles.css）为 TalkCut 拆分后的**自有新增**（快捷确认、文稿段落化阅读），TalkCut 领先，AgentCut 侧无任何 TalkCut 缺失的改动。**结论：零迁移，未向 TalkCut 写入任何文件**（其工作区 3 个进行中文件未触碰）。
+- AgentCut 自 7 月以来的全部工作此前从未 commit；现以快照提交 `09997d2`（307 文件、+55,032 行）落盘于 `codex/rough-cut-alpha` 分支，未 push。
+- `.gitignore` 增加 `.playwright-mcp/`（测试产物）；experiments 下 HyperFrames 项目按其嵌套 gitignore 排除媒体/渲染产物后入库。
+- AgentCut README 头部增加归属边界说明（协议路线 + 产品层为拆分快照、不再演进）；TalkCut README 已有拆分说明，未改动。
+- 确认 experiments/video-talkcraft-trial 与 video-talkcraft-full 已被删除（其验证结论保留在 2026-09-03 日志中）。
+
+### 验证
+
+- 提交后 `git status` 干净；`CI=true pnpm check`（ffmpeg-full 环境变量）exit 0：15 个包构建与 strict typecheck 通过、429/429 测试通过，与 2026-09-02 基线一致。
+- 暂存前扫描确认无媒体原片、无 >1MB 文件、无凭据入库；`.agentcut/` dogfood 工程与 asr-worker venv 维持忽略。
+
+### 限制与后续
+
+- 提交仅在本地 `codex/rough-cut-alpha` 分支，未 push 到 origin。
+- 归属比对基于拆分时改名规则的规范化，若 TalkCut 做过规则外的深层重构可能漏判——抽样核对 4 个功能差异文件后风险低。
+- P0 Gate 其余项已满足（工作区干净、TalkCut 全绿以其 2026-09-02 拆分验证为准、双方 README 边界已写明）；下一阶段为 P1 内核解耦与参考宿主。
+
 ## 2026-09-06：确立 MIT 许可与协议化重构总体计划
 
 ### 目标

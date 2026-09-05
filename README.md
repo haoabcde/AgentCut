@@ -1,8 +1,10 @@
 # AgentCut
 
-AgentCut 是一个正在规划中的、本地优先的 Agent 原生视频剪辑工具。外部通用 Agent 通过 MCP、CLI 或 SDK 进行分析和结构化编辑；本地 Web 编辑器负责预览、Transcript、多轨时间线、人工修改、版本与导出。
+> 2026-09-06 起本仓库转向 **Agent 剪辑协议** 路线：目标产物是 MIT 开源的、不绑定任何编辑器的时间线 IR + 命令协议、参考宿主与一致性测试套件。口播剪辑产品已拆分为独立的 **TalkCut**（`~/Developer/talkcut`，私有），本仓库中的 studio / asr / candidate / render / alpha-gate 等产品层代码为拆分时点快照，将按 [docs/19 协议化重构总体计划](./docs/19-protocol-program-plan.md) 剥离，不再演进。背景与竞品分析见 [docs/18 战略复盘](./docs/18-strategy-review-2026-09.md)。
 
-当前已完成产品/技术基线，并进入可信中文口播纵向验证：仓库包含 Timeline IR 0.1、精确时间、typed transaction、SQLite WAL、真实本地 ASR、保守删除候选、审阅投影、剪后 PreviewPlan 和会校验源素材 content hash、可在崩溃窗口收养成片或无覆盖安全重试的持久化 FFmpeg 导出 job。它仍不是完整编辑器；自动修改必须可解释、可撤销、可审计，用户锁定内容不能被 Agent 擅自覆盖。
+AgentCut 是一个本地优先的 Agent 原生视频剪辑基础设施。外部通用 Agent 通过 MCP、CLI 或 SDK 进行分析和结构化编辑；本地 Web 编辑器负责预览、Transcript、多轨时间线、人工修改、版本与导出。
+
+当前仓库快照包含 Timeline IR 0.1、精确时间、typed transaction、SQLite WAL、真实本地 ASR、保守删除候选、审阅投影、剪后 PreviewPlan 和会校验源素材 content hash、可在崩溃窗口收养成片或无覆盖安全重试的持久化 FFmpeg 导出 job。自动修改必须可解释、可撤销、可审计，用户锁定内容不能被 Agent 擅自覆盖。
 
 从单条本地口播创建并转写工程：
 
