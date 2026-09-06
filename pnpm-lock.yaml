@@ -200,6 +200,12 @@ importers:
         specifier: workspace:*
         version: link:../timeline-schema
 
+  packages/otio-interop:
+    dependencies:
+      '@agentcut/timeline-schema':
+        specifier: workspace:*
+        version: link:../timeline-schema
+
   packages/project-store:
     dependencies:
       '@agentcut/edit-commands':

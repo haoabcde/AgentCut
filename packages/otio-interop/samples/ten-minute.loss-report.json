@@ -1,0 +1,59 @@
+{
+  "adapter": "@agentcut/otio-interop",
+  "adapterVersion": "0.1.0",
+  "otioVersion": "0.18.1",
+  "exportedAt": "2026-09-06T11:41:02.842Z",
+  "project": {
+    "id": "project_otio_roundtrip_10min",
+    "revision": 0,
+    "sequenceId": "sequence_main"
+  },
+  "losses": [
+    {
+      "category": "clip-stream-index",
+      "count": 3,
+      "severity": "metadata-encoded",
+      "detail": "clip clip_a_001: OTIO media references carry no stream index; encoded as metadata; clip clip_a_002: OTIO media references carry no stream index; encoded as metadata; clip clip_a_003: OTIO media references carry no stream index; encoded as metadata"
+    },
+    {
+      "category": "disabled-clip",
+      "count": 2,
+      "severity": "metadata-encoded",
+      "detail": "clip clip_v_003: OTIO has no enabled flag; encoded as metadata, invisible to NLEs; clip clip_a_003: OTIO has no enabled flag; encoded as metadata, invisible to NLEs"
+    },
+    {
+      "category": "non-media-clip",
+      "count": 1,
+      "severity": "dropped",
+      "detail": "clip clip_v_shape (shape): exported as gap to preserve timing"
+    },
+    {
+      "category": "provenance-and-history",
+      "count": 1,
+      "severity": "dropped",
+      "detail": "provenance, versions and history belong to the AgentCut audit domain, not to an interchange file"
+    },
+    {
+      "category": "sequence-locks",
+      "count": 1,
+      "severity": "dropped",
+      "detail": "1 lock region(s) are AgentCut access-control semantics, not timeline content"
+    },
+    {
+      "category": "track-flags-metadata",
+      "count": 1,
+      "severity": "metadata-encoded",
+      "detail": "track track_a1: locked/enabled/muted are AgentCut semantics, encoded as metadata"
+    },
+    {
+      "category": "unmappable-marker",
+      "count": 1,
+      "severity": "dropped",
+      "detail": "marker without {name: string, start: IR time} shape has no OTIO equivalent"
+    }
+  ],
+  "verification": {
+    "status": "equivalent",
+    "divergences": []
+  }
+}

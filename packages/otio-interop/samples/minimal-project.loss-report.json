@@ -1,0 +1,41 @@
+{
+  "adapter": "@agentcut/otio-interop",
+  "adapterVersion": "0.1.0",
+  "otioVersion": "0.18.1",
+  "exportedAt": "2026-09-06T11:41:02.720Z",
+  "project": {
+    "id": "project_demo_001",
+    "revision": 0,
+    "sequenceId": "sequence_main"
+  },
+  "losses": [
+    {
+      "category": "artifact:deletionCandidateSet",
+      "count": 1,
+      "severity": "dropped",
+      "detail": "1 deletionCandidateSet artifact(s) are AgentCut workspace data, not timeline content"
+    },
+    {
+      "category": "artifact:editProposal",
+      "count": 1,
+      "severity": "dropped",
+      "detail": "1 editProposal artifact(s) are AgentCut workspace data, not timeline content"
+    },
+    {
+      "category": "artifact:transcript",
+      "count": 1,
+      "severity": "dropped",
+      "detail": "1 transcript artifact(s) are AgentCut workspace data, not timeline content"
+    },
+    {
+      "category": "provenance-and-history",
+      "count": 1,
+      "severity": "dropped",
+      "detail": "provenance, versions and history belong to the AgentCut audit domain, not to an interchange file"
+    }
+  ],
+  "verification": {
+    "status": "equivalent",
+    "divergences": []
+  }
+}

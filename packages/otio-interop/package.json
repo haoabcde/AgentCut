@@ -1,0 +1,19 @@
+{
+  "name": "@agentcut/otio-interop",
+  "version": "0.1.0",
+  "description": "AgentCut Timeline IR <-> OTIO boundary adapter (export-first, official OpenTimelineIO library, with loss report).",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "pnpm run build && vitest run src",
+    "samples": "node scripts/export-samples.mjs"
+  },
+  "dependencies": {
+    "@agentcut/timeline-schema": "workspace:*"
+  }
+}

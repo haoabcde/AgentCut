@@ -2,6 +2,37 @@
 
 本文件记录已经实际落地的产品、架构和工程变更。每次有效修改都应同步更新，以便后续 Agent 和开发者区分已验证事实、执行假设与待完成事项。
 
+## 2026-09-06：P4 推进——OTIO 互操作适配器（导出优先 + loss report + round-trip 等价）
+
+### 目标
+
+执行 docs/19 P4：`interop/otio` 基于 OTIO 官方库实现 Timeline IR → OTIO 导出（首版只导出），附 loss report；Gate 要求 10 分钟规模工程 round-trip 时间线结构等价（loss report 之外零差异），NLE 实测记录进文档。
+
+### 交付（packages/otio-interop）
+
+- **架构（ADR-001 落地）**：IR 是唯一事实源，OTIO 只出现在边界。全部 IR→OTIO 语义决策集中在 TS `buildExportPlan`（gap 插入、loss 分类、metadata 编码、URL 解析）；`tools/otio_write.py`/`otio_read.py` 是哑序列化器/归一化器，只做官方库对象构造与读回，不做任何语义判断——OTIO 语义知识单点维护，官方库升级只需回归测试。官方库 0.18.1（`pip install --user opentimelineio`），不自写解析器。
+- **映射表**（完整版在 `packages/otio-interop/README.md`）：活动 sequence→Timeline；video/audio 轨→Video/Audio；media clip→Clip+ExternalReference；clip 间空位与非 media clip→Gap（后者记 loss）；时间语义 `rate = numerator/denominator` 直线映射、值逐位保留；`enabled:false`/非 0 `streamIndex`/clip.metadata→`metadata["agentcut"]`（NLE 不可见、round-trip 可恢复、记 metadata-encoded loss）；`{name,start,duration?}` 形状 marker→Stack 上的 Marker；locks/transitions/artifacts/provenance/styleSpecs/渲染属性（transform/audio/effects 等）→逐项 dropped loss。Loss 两级语义：`dropped`（丢弃+记账）与 `metadata-encoded`（编码保留+记账）；判定标准是 **loss report 之外零差异**。
+- **round-trip 验证**：每次导出自动用官方库读回并与 plan 逐项对比（时间：同值同率逐位一致、跨值按秒 1e-6 容差；metadata：key 排序后比较）；分歧逐条给路径，篡改必报（负向用例覆盖）。验证结果进 loss report（JSON + Markdown 表格）。
+- **可审阅样例**：`pnpm --filter @agentcut/otio-interop samples` 重新生成 `samples/`（minimal-project 与 ten-minute 各一份 .otio + loss report .md/.json）；ten-minute 样例为 10 分钟规模合成工程（2 轨 10 clip——9 media + 1 非 media，含 15s 空位、禁用 clip、锁定轨、混合帧率 marker、不可映射 marker），导出结果 round-trip **equivalent**、7 类 loss 全部记账。
+
+### 对抗性审查发现并已修复的问题
+
+- **夹具用了不存在的 ClipKind**：`kind:"graphic"` 是 TrackKind 而非 ClipKind，cast 掩盖了 schema 非法——改 `shape`（合法的非 media clip，正好走"导出为 gap + loss"路径）。
+- **NTSC 累积漂移**：夹具每个 clip 起止独立按 30000/1001 取整，名义相邻的 clip 在游标累积后产生亚帧重叠（240s 处重叠 20ms），会被 plan 按重叠丢弃而破坏 round-trip——夹具统一 30fps（秒边界逐位对齐），NTSC 映射由 minimal fixture（单 clip 连续）覆盖。
+- **streamIndex 静默丢失**：media clip 的 `streamIndex`（多流素材选流）原本不进 OTIO 也不记账，违反"loss report 之外零差异"——现编码进 `metadata["agentcut"]`（非 0 时记 metadata-encoded loss）；同轮审查把 transform/audio/effects/animations/content 归为 `clip-render-properties` dropped loss。
+- **OTIO API 两处真实漂移**（对 0.18.1 实测确认）：`Timeline` 没有 `markers`——时间线级 marker 属 Stack（`timeline.tracks.markers`）；官方库读回的 metadata 是 C++ `AnyDictionary`/`AnyVector`，不能直接 JSON 序列化且 **key 顺序不保留**（std::map 语义）——读回端递归 `to_plain`，比较端 metadata 改为 key 排序后比较（语义等价而非序列化顺序等价）。
+
+### 验证
+
+- `CI=true AGENTCUT_FFMPEG_PATH=/opt/homebrew/opt/ffmpeg-full/bin/ffmpeg pnpm check` exit 0：**477/477 测试通过**（P3 的 451 + otio-interop 26 项：plan 纯映射 14、compare 8、round-trip 4——可用性探针 1 + 官方库集成 3）。
+- round-trip 集成测试对两个夹具各跑一次"导出→官方库读回→逐项对比"，均 `equivalent`；篡改导出的 .otio（替换 target_url）必报 `tracks[0].items[0].mediaReference.targetUrl` 分歧——验证链路不是摆设。
+- `samples/` 实跑输出：minimal-project equivalent（4 类 loss）、ten-minute equivalent（7 类 loss），OTIO 官方库版本 0.18.1。
+
+### 限制与后续
+
+- **NLE 实测待人工**：开发机未安装任何 NLE（DaVinci/Premiere/FCP 均无），无法在本轮完成"真实 NLE 打开验证"。`packages/otio-interop/README.md` 已给出逐步 runbook（DaVinci ≥17 原生导入 .otio，核对轨序/gap/marker/总时长；媒体离线属预期），执行后回填验证状态。Gate P4 的其余条款（10 分钟规模 round-trip 等价、loss report 之外零差异）已关闭。
+- OTIO → IR 导入为第二优先级（docs/19 既定）；FCPXML 按计划继续延后。
+
 ## 2026-09-06：P3 推进——conformance 套件、timeline 发现读与真实 Agent E2E
 
 ### 目标

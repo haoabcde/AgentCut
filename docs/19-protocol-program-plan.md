@@ -117,7 +117,7 @@ TalkCut（私有，首个宿主产品）
 
 **交付**
 
-- `interop/otio`：基于 **OTIO 官方库**（Apache-2.0，不自写解析器）实现 Timeline IR → OTIO 导出（首版只导出），附 loss report（哪些 AgentCut 语义无法表达）；OTIO → IR 导入作为第二优先级。
+- `@agentcut/otio-interop`（packages/otio-interop）：基于 **OTIO 官方库**（Apache-2.0，不自写解析器）实现 Timeline IR → OTIO 导出（首版只导出），附 loss report（哪些 AgentCut 语义无法表达）与官方库读回 round-trip 等价验证；OTIO → IR 导入作为第二优先级。可审阅样例与 NLE runbook 见包 README 与 `samples/`。
 - 导出结果在至少一个真实 NLE（DaVinci 免费版即可）中打开验证。
 - FCPXML 明确延后到有真实用户需求时。
 
@@ -167,5 +167,5 @@ P0(1) → P1(2–3) → P2(2) → P3(2) → P4(2) → P5(1–2)，约 **10–12 
 | P1 内核解耦与参考宿主 | ✅ AgentCut 侧关闭（2026-09-06） | host-extensions 迁移 + 扩展校验器钩子 + reference-host + core 读写路径 + MCP core 工具 + MCP↔reference-host E2E + daemon core 路由测试全部落盘；`pnpm check` exit 0、443/443 测试通过。发现并修复两类测试前不可见的问题：宿主级 revision 预检破坏幂等重放、alpha 门对未登记工程的形状崩溃。协议规范 v0.1 草案与 OTIO ADR 一并产出（原属 P2，提前）。TalkCut 侧"以扩展命名空间暴露原有方法"需触碰 `~/Developer/talkcut`，按 GOAL.md 规则待用户确认，不阻塞本仓库后续阶段。 |
 | P2 协议硬化与规范 | ✅ AgentCut 侧关闭（2026-09-06） | 四项协议改造全部落地：开放 metadata 命名空间（extensionValidators 钩子）✅、风险/审批策略 capability 声明化（`writePolicy.timelineTransactions`，宿主声明语义、协议不编码风险定义）✅、任意合法 transaction 写路径 ✅、按需感知（transcript 分页已有；视觉抽样接口形状定义进规范 §13，0.2 候选，无媒体管线需求前维持定义态）✅。规范 v0.1 ✅、OTIO ADR ✅、changesets + `docs/protocol/versioning.md`（0.x 三版弃用窗口政策）✅。Gate 对账：规范 §12 条款↔测试映射复核完成，补齐违例/session 严格校验两组测试（445/445 绿）；P1–P2 协议面变更均为只增兼容，无破坏性变更需要走弃用窗口。对账属持续义务：今后每处协议面变更必须同步 §12 映射。 |
 | P3 conformance 与真实 Agent E2E | ✅ AgentCut 侧关闭（2026-09-06） | `@agentcut/conformance`（22 core 检查 + 崩溃恢复，逐条挂规范条款，机器可读报告，CLI + 库 API）落地并对 reference-host 与 local-daemon 双双全绿（各 25/25，含重启后 revision/幂等账本/diff 存续证据）；TalkCut 私有仓库迁移按 GOAL.md 待用户确认。真实 Agent E2E 落地并通过：Claude Code（50.8s）与 Codex（57.2s）经 MCP 对真实 reference-host 完成读工程→timeline 发现→transcript→原子事务→diff 确认，宿主状态独立验收（脚本 `scripts/agent-e2e.mjs` 可重复）。过程中发现协议缺口并以只增兼容方式补 core 路由 `GET /api/agent/timeline`（§6.4，五层同步：规范/双宿主/agent-client/MCP 工具），并修正 daemon `/api/health` 不符 §6.1 的漂移。`pnpm check` exit 0、451/451 测试通过。 |
-| P4 OTIO adapter | ⬜ 未开始 | |
+| P4 OTIO adapter | 🟡 代码侧关闭（2026-09-06），NLE 实测待人工 | `@agentcut/otio-interop` 落地（ADR-001：语义全在 TS plan 构建器，官方库 0.18.1 只做哑序列化/读回）：导出 + 两级 loss report（dropped/metadata-encoded）+ 每次导出自动 round-trip 等价验证（官方库读回逐项对比，篡改必报，含负向用例）。10 分钟规模合成工程 round-trip **equivalent**、7 类 loss 全部记账——Gate 的等价条款关闭。对抗性审查修复 5 处：非法 ClipKind 夹具、NTSC 累积漂移致亚帧重叠、streamIndex 静默丢失、OTIO 两处真实 API 漂移（Timeline 无 markers→Stack；AnyDictionary 不可直序列化且 key 序不保留）。`pnpm check` exit 0、477/477 测试通过。样例与映射表/loss 分类学见 `packages/otio-interop/README.md` 与 `samples/`。**NLE 实测**：开发机无任何 NLE，runbook 已备（README「真实 NLE 验证 runbook」），待人工执行后回填。 |
 | P5 开源发布 | ⬜ 未开始 | 材料准备可启动，公开前必须停下请示。 |

@@ -1,0 +1,91 @@
+{
+    "OTIO_SCHEMA": "Timeline.1",
+    "metadata": {
+        "agentcut": {
+            "canvas": {
+                "background": "#000000",
+                "height": 1920,
+                "width": 1080
+            },
+            "frameRate": {
+                "denominator": 1001,
+                "numerator": 30000
+            },
+            "projectId": "project_demo_001",
+            "revision": 0,
+            "sequenceId": "sequence_main"
+        }
+    },
+    "name": "主版本 9:16",
+    "global_start_time": null,
+    "tracks": {
+        "OTIO_SCHEMA": "Stack.1",
+        "metadata": {},
+        "name": "tracks",
+        "source_range": null,
+        "effects": [],
+        "markers": [],
+        "enabled": true,
+        "color": null,
+        "children": [
+            {
+                "OTIO_SCHEMA": "Track.1",
+                "metadata": {
+                    "agentcut": {
+                        "enabled": true,
+                        "locked": false,
+                        "order": 0
+                    }
+                },
+                "name": "主画面",
+                "source_range": null,
+                "effects": [],
+                "markers": [],
+                "enabled": true,
+                "color": null,
+                "children": [
+                    {
+                        "OTIO_SCHEMA": "Clip.2",
+                        "metadata": {
+                            "agentcut": {
+                                "clipId": "clip_take_1",
+                                "enabled": true,
+                                "streamIndex": 0
+                            }
+                        },
+                        "name": "talking-head.mp4",
+                        "source_range": {
+                            "OTIO_SCHEMA": "TimeRange.1",
+                            "duration": {
+                                "OTIO_SCHEMA": "RationalTime.1",
+                                "rate": 29.97002997002997,
+                                "value": 300.0
+                            },
+                            "start_time": {
+                                "OTIO_SCHEMA": "RationalTime.1",
+                                "rate": 29.97002997002997,
+                                "value": 30.0
+                            }
+                        },
+                        "effects": [],
+                        "markers": [],
+                        "enabled": true,
+                        "color": null,
+                        "media_references": {
+                            "DEFAULT_MEDIA": {
+                                "OTIO_SCHEMA": "ExternalReference.1",
+                                "metadata": {},
+                                "name": "",
+                                "available_range": null,
+                                "available_image_bounds": null,
+                                "target_url": "media/talking-head.mp4"
+                            }
+                        },
+                        "active_media_reference_key": "DEFAULT_MEDIA"
+                    }
+                ],
+                "kind": "Video"
+            }
+        ]
+    }
+}

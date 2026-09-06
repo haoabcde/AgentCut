@@ -157,6 +157,7 @@ export AGENTCUT_FFPROBE_PATH=/opt/homebrew/opt/ffmpeg-full/bin/ffprobe
 22. [版本化与破坏性变更政策](./docs/protocol/versioning.md)
 23. [协议一致性套件 @agentcut/conformance](./packages/conformance/README.md)
 24. [Alpha Gate Benchmark](./benchmarks/alpha-gate/README.md)
+25. [OTIO 互操作适配器 @agentcut/otio-interop](./packages/otio-interop/README.md)
 
 ## 下一步
 
