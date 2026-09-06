@@ -251,6 +251,23 @@ export interface AlphaAuditResponse {
   };
 }
 
+/**
+ * 宿主声明的写入策略（协议规范 §6.2）。capability 名称是宿主词汇表，
+ * 语义以本声明为准；协议不编码"什么是高风险"。
+ */
+export interface AgentWritePolicy {
+  timelineTransactions: {
+    /** core 写路由所需的基础 capability。 */
+    baseCapability: AgentCapability;
+    /** 需要已批准载荷时的 capability（宿主无审批流则缺省）。 */
+    approvalCapability?: AgentCapability;
+    /** 审批流所在的宿主扩展命名空间（如 "talking-head-review"）。 */
+    approvalExtension?: string;
+    /** 宿主自由文本补充（面向人类调试，Agent 不应解析）。 */
+    notes?: string;
+  };
+}
+
 /** 协议 core 的工程概要：任何实现本协议的宿主都提供同一形状。 */
 export interface AgentProjectSummary {
   protocolVersion: "0.1.0";
@@ -268,7 +285,10 @@ export interface AgentProjectSummary {
     artifactCount: number;
     transcriptArtifacts: number;
   };
-  capabilities: { extensions: string[] };
+  capabilities: {
+    extensions: string[];
+    writePolicy?: AgentWritePolicy;
+  };
   session?: {
     id: string;
     clientId: string;

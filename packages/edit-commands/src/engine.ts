@@ -157,6 +157,14 @@ export function applyTransaction(
   return { document: working, record, idempotentReplay: false };
 }
 
+const KNOWN_OPERATION_TYPES: ReadonlySet<string> = new Set([
+  "asset.put", "asset.remove", "artifact.put", "artifact.remove",
+  "track.add", "track.remove",
+  "clip.insert", "clip.remove", "clip.split", "clip.move",
+  "clip.trim", "clip.replace", "clip.update",
+  "range.deleteRipple", "lock.add", "lock.remove",
+]);
+
 function assertTransactionEnvelope(
   document: AgentCutProjectDocument,
   transaction: EditTransaction,
@@ -175,6 +183,12 @@ function assertTransactionEnvelope(
   }
   if (transaction.operations.length === 0) {
     throw new EditError("INVALID_OPERATION", "Transaction must contain at least one operation");
+  }
+  // wire 上可能出现类型层之外的未知操作；协议 §4 要求显式拒绝而非静默跳过。
+  for (const operation of transaction.operations) {
+    if (!KNOWN_OPERATION_TYPES.has(operation.type)) {
+      throw new EditError("INVALID_OPERATION", `Unknown operation type: ${String(operation.type)}`);
+    }
   }
 }
 
@@ -659,6 +673,12 @@ function applyOperation(
       if (lock.owner !== actor.id) throw new EditError("LOCKED", `Only ${lock.owner} can remove lock ${lock.id}`);
       sequence.locks.splice(index, 1);
       return [{ type: "lock.add", lock: structuredClone(lock), index }];
+    }
+    default: {
+      // 类型层已穷尽；但事务来自 wire，未知操作必须显式拒绝（协议规范 §4），
+      // 静默跳过会让原子事务失去调用方意图。
+      const unknown = operation as { type?: unknown };
+      throw new EditError("INVALID_OPERATION", `Unknown operation type: ${String(unknown.type)}`);
     }
   }
 }

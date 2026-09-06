@@ -2,6 +2,32 @@
 
 本文件记录已经实际落地的产品、架构和工程变更。每次有效修改都应同步更新，以便后续 Agent 和开发者区分已验证事实、执行假设与待完成事项。
 
+## 2026-09-06：P2 推进——策略声明、对账测试与版本化工具
+
+### 目标
+
+执行 docs/19 P2 剩余交付：风险/审批策略 capability 声明化、按需视觉抽样接口定义、changesets/semver、规范与实现逐条对账。
+
+### 实际改动
+
+- **writePolicy 声明**：`GET /api/agent/project` 的 `capabilities` 新增 `writePolicy.timelineTransactions`（baseCapability 必填；approvalCapability/approvalExtension/notes 可选）。daemon 声明 talking-head-review 审批流，reference-host 声明最小开放策略。capability 名称仍是宿主词汇表（不破坏重命名），语义以声明为准——协议不编码"什么是高风险"。spec §6.2 正文、§13 相应条目毕业。只增兼容变更，无弃用窗口需求。
+- **changesets/semver**：引入 `@changesets/cli`（复用优先，不自建）；内核六包 `fixed` 联动；新增 `docs/protocol/versioning.md`——0.x 破坏性变更政策（公告→过渡→移除三版窗口、例外清单）、协议版本与包版本的联动规则；README 索引第 22 项；首份 changeset 记录 P1+P2 协议面变更。
+- **对账测试（spec §12 逐条映射的缺口补齐）**：reference-host 新增两个测试（+2）——protocolVersion 拒绝、未知 operation 拒绝、IDEMPOTENCY_CONFLICT、diff 窗口/规范性、审计头长度上限、无 Transcript 404、session 创建严格校验（未知/重复/空 capabilities、TTL 越界）；diff 断言钉住 actor 强制（请求体携带伪造 actor）。
+- **按需视觉抽样**：接口形状定义进 spec §13（pull 语义、有界 count、内容寻址引用、无媒体管线宿主返回 404/422），0.2 候选，未实现。
+
+### 对抗性审查发现并修复
+
+- **engine 对未知 operation type 无运行时防线**：类型层穷尽但 wire 载荷来自外部；`affectedByOperation` 对未知 type 静默落到尾部返回 undefined 并在外层崩溃为 500。已在 `assertTransactionEnvelope` 增加已知类型集合校验（协议 §4 要求的显式 422 INVALID_OPERATION），`applyOperation` 增加 default 分支作为纵深防御。
+- 审计头"前后空白"用例在 HTTP 传输层会被裁掉而不可测，改为长度超限用例（>128）。
+
+### 验证
+
+- `CI=true AGENTCUT_FFMPEG_PATH=/opt/homebrew/opt/ffmpeg-full/bin/ffmpeg pnpm check` exit 0：**445/445 测试通过**（P1 的 443 + 2 对账测试）。
+
+### 限制与后续
+
+- P2 剩余：规范与实现的逐条对账属持续动作（每改一处协议面必须同步 §12 映射）；视觉抽样待 0.2 实现（无媒体管线需求出现前维持定义态）。TalkCut 侧扩展命名空间改造仍待用户确认。
+
 ## 2026-09-06：P1 内核解耦与参考宿主（代码完成）
 
 ### 目标

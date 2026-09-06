@@ -1552,6 +1552,14 @@ function coreProjectSummary(store: ProjectStore, session: AgentSession): unknown
     },
     capabilities: {
       extensions: ["talking-head-review"],
+      writePolicy: {
+        timelineTransactions: {
+          baseCapability: "timeline:write:low_risk_only",
+          approvalCapability: "timeline:write:approved",
+          approvalExtension: "talking-head-review",
+          notes: "删除用户内容等高风险变更需经 talking-head-review 扩展的 revision/payload 绑定审批流；其余通过校验的事务直接提交。",
+        },
+      },
     },
     session: {
       id: session.id,

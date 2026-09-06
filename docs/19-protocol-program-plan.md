@@ -165,7 +165,7 @@ P0(1) → P1(2–3) → P2(2) → P3(2) → P4(2) → P5(1–2)，约 **10–12 
 |---|---|---|
 | P0 归属清理与冻结 | ✅ 关闭（2026-09-06） | 快照提交 `09997d2`；三方比对零迁移；429/429 测试基线。 |
 | P1 内核解耦与参考宿主 | ✅ AgentCut 侧关闭（2026-09-06） | host-extensions 迁移 + 扩展校验器钩子 + reference-host + core 读写路径 + MCP core 工具 + MCP↔reference-host E2E + daemon core 路由测试全部落盘；`pnpm check` exit 0、443/443 测试通过。发现并修复两类测试前不可见的问题：宿主级 revision 预检破坏幂等重放、alpha 门对未登记工程的形状崩溃。协议规范 v0.1 草案与 OTIO ADR 一并产出（原属 P2，提前）。TalkCut 侧"以扩展命名空间暴露原有方法"需触碰 `~/Developer/talkcut`，按 GOAL.md 规则待用户确认，不阻塞本仓库后续阶段。 |
-| P2 协议硬化与规范 | 🔵 部分提前完成 | 开放 metadata 命名空间 ✅、任意合法 transaction 写路径 ✅、规范 v0.1 草案 ✅、OTIO ADR ✅；剩余：风险/审批策略 capability 化、按需视觉抽样接口、changesets/semver、规范与实现逐条对账复核。 |
+| P2 协议硬化与规范 | ✅ AgentCut 侧关闭（2026-09-06） | 四项协议改造全部落地：开放 metadata 命名空间（extensionValidators 钩子）✅、风险/审批策略 capability 声明化（`writePolicy.timelineTransactions`，宿主声明语义、协议不编码风险定义）✅、任意合法 transaction 写路径 ✅、按需感知（transcript 分页已有；视觉抽样接口形状定义进规范 §13，0.2 候选，无媒体管线需求前维持定义态）✅。规范 v0.1 ✅、OTIO ADR ✅、changesets + `docs/protocol/versioning.md`（0.x 三版弃用窗口政策）✅。Gate 对账：规范 §12 条款↔测试映射复核完成，补齐违例/session 严格校验两组测试（445/445 绿）；P1–P2 协议面变更均为只增兼容，无破坏性变更需要走弃用窗口。对账属持续义务：今后每处协议面变更必须同步 §12 映射。 |
 | P3 conformance 与真实 Agent E2E | ⬜ 未开始 | |
 | P4 OTIO adapter | ⬜ 未开始 | |
 | P5 开源发布 | ⬜ 未开始 | 材料准备可启动，公开前必须停下请示。 |

@@ -24,6 +24,7 @@
     "demo:shorts:web": "node demos/short-video-generator/scripts/serve.mjs"
   },
   "devDependencies": {
+    "@changesets/cli": "^3.0.2",
     "@types/node": "26.1.1",
     "fast-check": "4.9.0",
     "typescript": "7.0.2",

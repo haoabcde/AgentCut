@@ -179,6 +179,11 @@ function projectSummary(document: AgentCutProjectDocument, session: AgentSession
     },
     capabilities: {
       extensions: [],
+      writePolicy: {
+        timelineTransactions: {
+          baseCapability: "timeline:write:low_risk_only",
+        },
+      },
     },
     session: {
       id: session.id,

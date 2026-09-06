@@ -154,6 +154,7 @@ export AGENTCUT_FFPROBE_PATH=/opt/homebrew/opt/ffmpeg-full/bin/ffprobe
 19. [协议化重构总体计划](./docs/19-protocol-program-plan.md)
 20. [Agent 剪辑协议规范 v0.1（草案）](./docs/protocol/agentcut-protocol-0.1.md)
 21. [ADR-001：内部 IR 不采用 OTIO](./docs/protocol/adr-001-internal-ir-not-otio.md)
+22. [版本化与破坏性变更政策](./docs/protocol/versioning.md)
 20. [Alpha Gate Benchmark](./benchmarks/alpha-gate/README.md)
 
 ## 下一步

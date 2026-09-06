@@ -122,7 +122,16 @@ A conforming host MUST implement all routes in this section with the exact paths
   "facts": {
     "sequenceCount": 1, "clipCount": 1, "artifactCount": 2, "transcriptArtifacts": 1
   },
-  "capabilities": { "extensions": [] },
+  "capabilities": {
+    "extensions": [],
+    "writePolicy": {
+      "timelineTransactions": {
+        "baseCapability": "timeline:write:low_risk_only",
+        "approvalCapability": "timeline:write:approved",
+        "approvalExtension": "talking-head-review"
+      }
+    }
+  },
   "session": {
     "id": "session_9f2c", "clientId": "codex",
     "capabilities": ["project:read"], "expiresAt": "…"
@@ -131,6 +140,14 @@ A conforming host MUST implement all routes in this section with the exact paths
 ```
 
 `capabilities.extensions` lists the host's declared extension namespaces (§10). This route is the agent's first call: it returns the current `revision` needed for every write, and the extension list that tells the agent which host-specific surfaces exist.
+
+`capabilities.writePolicy.timelineTransactions` declares the host's write policy for §7 (agents MUST read it instead of assuming):
+
+- `baseCapability` (required): the session capability needed to submit transactions at all.
+- `approvalCapability` / `approvalExtension` (optional): when present, the host gates some transactions (e.g. deleting user content) behind an approval flow living in the named extension namespace. The protocol deliberately does not encode *which* operations are risky — that judgment is host-owned and evolves with models; the declaration only says **where the gate lives**.
+- `notes` (optional): free text for humans; agents MUST NOT parse it.
+
+Capability names are host vocabulary, not protocol semantics. Two hosts may name the base capability differently; what is contractual is that the name returned here is the name required in session creation.
 
 ### 6.3 `GET /api/agent/transcript`
 
@@ -300,11 +317,18 @@ Product hosts add codes for their extensions (approvals, exports, ASR availabili
 
 | Clause | Pinned by |
 |---|---|
+| §4 protocolVersion rejection, unknown-operation rejection | `apps/reference-host/src/server.test.ts` (protocol violations); engine envelope check `packages/edit-commands/src/engine.ts` |
 | §5.2 session bootstrap, idempotent replay, bad bootstrap | `apps/reference-host/src/server.test.ts` |
+| §5.2 session creation strictness (unknown/duplicate/empty capabilities, TTL bounds) | `apps/reference-host/src/server.test.ts` (session creation strictly) |
+| §5.3 request-id header validation | daemon tests, `apps/reference-host/src/server.test.ts` (protocol violations) |
 | §6.2–6.4 core reads, paging, diff | `apps/reference-host/src/server.test.ts` |
+| §6.2 `writePolicy` declaration | daemon core test (`apps/local-daemon/src/server.test.ts`), `apps/reference-host/src/server.test.ts`, MCP E2E |
+| §6.3 no-transcript 404 | `apps/reference-host/src/server.test.ts` (protocol violations) |
+| §6.4 diff window + canonical query | `apps/reference-host/src/server.test.ts` (protocol violations), daemon tests |
 | §7.1–7.4 transaction apply/replay/conflict/capability gating | `apps/reference-host/src/server.test.ts`; MCP E2E `apps/mcp-server/src/reference-host.e2e.test.ts` |
+| §7.1 actor forcing | daemon core test + `apps/reference-host/src/server.test.ts` (diff actor assertion) |
 | §7.2 atomicity, inverse records, crash recovery | `packages/project-store` suite (incl. SIGKILL harness), `packages/edit-commands` suite |
-| §7.1 actor forcing | `apps/reference-host/src/server.test.ts` (actor override), daemon tests |
+| §7.4 `IDEMPOTENCY_CONFLICT` on same-key different-payload | `apps/reference-host/src/server.test.ts` (protocol violations) |
 | §8 operation set & semantics | `packages/edit-commands/src/engine.test.ts`, property tests |
 | §9 error mapping parity | `statusForCode` parity daemon ↔ reference-host; per-code tests in both |
 | §10 extensions opaque to core, host validators | `packages/host-extensions/src/extensions.test.ts`, `packages/timeline-schema/src/validate.test.ts` |
@@ -314,8 +338,8 @@ Product hosts add codes for their extensions (approvals, exports, ASR availabili
 
 ## 13. Planned for 0.2 (not part of this version)
 
-Two hardening items from the program plan are deliberately deferred and MUST NOT be assumed present in a 0.1-conforming host:
+One hardening item from the program plan is deliberately deferred and MUST NOT be assumed present in a 0.1-conforming host:
 
-- **On-demand visual sampling**: a bounded way for an agent to request frames/thumbnails of specific ranges (`GET /api/agent/timeline/frames?at=…&limit=…` shape under discussion). Perception stays pull-based — hosts never push media; agents fetch bounded samples only when their reasoning needs vision.
-- **Policy as capability config**: hosts currently hard-code which operations are "low risk" vs approval-gated. 0.2 moves risk/approval policy to a host-declared, capability-session-scoped configuration so the write route stays uniform while gating stays host-owned.
+- **On-demand visual sampling**: a bounded way for an agent to request frames/thumbnails of specific ranges. Proposed shape: `GET /api/agent/timeline/frames?at=<micros>&count=<n>&maxWidth=<px>` returning content-addressed image references (never raw paths), bounded by `count` (≤ 32) and session capability `timeline:read` (or `project:read`). Perception stays pull-based — hosts never push media; agents fetch bounded samples only when their reasoning needs vision. Hosts without a media pipeline (e.g. the reference host) would return `404`/`422` per §9.
+- (Graduated into 0.1: write policy declaration — see §6.2 `writePolicy`.)
 

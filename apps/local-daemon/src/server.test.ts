@@ -1265,7 +1265,16 @@ describe("AgentCut local daemon", () => {
         activeSequenceId: "sequence_main",
       }),
       facts: expect.objectContaining({ clipCount: 1, transcriptArtifacts: 1 }),
-      capabilities: { extensions: ["talking-head-review"] },
+      capabilities: {
+        extensions: ["talking-head-review"],
+        writePolicy: expect.objectContaining({
+          timelineTransactions: expect.objectContaining({
+            baseCapability: "timeline:write:low_risk_only",
+            approvalCapability: "timeline:write:approved",
+            approvalExtension: "talking-head-review",
+          }),
+        }),
+      },
       session: expect.objectContaining({ clientId: "codex-core" }),
     });
 

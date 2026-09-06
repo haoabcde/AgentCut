@@ -1,0 +1,11 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.0.2/schema.json",
+  "changelog": false,
+  "commit": false,
+  "fixed": [["@agentcut/timeline-schema", "@agentcut/timeline-engine", "@agentcut/edit-commands", "@agentcut/project-store", "@agentcut/agent-client", "@agentcut/mcp-server"]],
+  "linked": [],
+  "access": "restricted",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": []
+}

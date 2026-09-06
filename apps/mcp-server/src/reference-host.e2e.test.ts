@@ -72,7 +72,12 @@ describe("AgentCut MCP server against the reference host", () => {
         protocolVersion: REFERENCE_PROTOCOL_VERSION,
         project: expect.objectContaining({ id: "project_demo_001", revision: 0 }),
         facts: expect.objectContaining({ clipCount: 1, transcriptArtifacts: 1 }),
-        capabilities: { extensions: [] },
+        capabilities: {
+          extensions: [],
+          writePolicy: {
+            timelineTransactions: { baseCapability: "timeline:write:low_risk_only" },
+          },
+        },
       }),
     });
 
