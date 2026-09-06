@@ -11,6 +11,7 @@ import type {
   AgentSemanticFinding,
   AgentTimelineTransactionInput,
   AgentTimelineTransactionResult,
+  AgentTimelinePage,
   AgentTranscriptPage,
   AlphaAuditResponse,
   CandidateSummary,
@@ -195,6 +196,45 @@ export class AgentCutClient {
   /** 协议 core：任何实现本协议的宿主（包括无媒体管线的 reference host）都提供。 */
   async project(): Promise<AgentProjectSummary> {
     return this.#request<AgentProjectSummary>("GET", "/api/agent/project");
+  }
+
+  /** 协议 core §6.4：分页读取时间线结构，发现可编辑对象（轨道/片段 ID 与时间位置）。 */
+  async timeline(input: {
+    sequenceId?: string;
+    fromMicros?: number;
+    toMicros?: number;
+    offset?: number;
+    limit?: number;
+  } = {}): Promise<AgentTimelinePage> {
+    const params = new URLSearchParams();
+    if (input.sequenceId !== undefined) {
+      params.set("sequenceId", requiredText(input.sequenceId, "sequenceId"));
+    }
+    if (input.fromMicros !== undefined) {
+      params.set("fromMicros", String(requiredRevision(input.fromMicros, "fromMicros")));
+    }
+    if (input.toMicros !== undefined) {
+      params.set("toMicros", String(requiredRevision(input.toMicros, "toMicros")));
+    }
+    if (input.fromMicros !== undefined && input.toMicros !== undefined
+      && input.fromMicros > input.toMicros) {
+      throw new AgentCutClientError(0, "INVALID_INPUT", "fromMicros must not exceed toMicros");
+    }
+    if (input.offset !== undefined) {
+      const offset = requiredRevision(input.offset, "offset");
+      if (offset > 10_000_000) {
+        throw new AgentCutClientError(0, "INVALID_INPUT", "offset must be an integer from 0 to 10000000");
+      }
+      params.set("offset", String(offset));
+    }
+    if (input.limit !== undefined) {
+      if (!Number.isSafeInteger(input.limit) || input.limit < 1 || input.limit > 500) {
+        throw new AgentCutClientError(0, "INVALID_INPUT", "limit must be an integer from 1 to 500");
+      }
+      params.set("limit", String(input.limit));
+    }
+    const query = params.size > 0 ? `?${params}` : "";
+    return this.#request<AgentTimelinePage>("GET", `/api/agent/timeline${query}`);
   }
 
   /** 协议 core：提交任意 typed operations 组合的原子事务，宿主端 engine 负责校验与执行。 */

@@ -18,5 +18,8 @@
     "@agentcut/render-engine": "workspace:*",
     "@agentcut/review-projection": "workspace:*",
     "@agentcut/timeline-schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@agentcut/conformance": "workspace:*"
   }
 }

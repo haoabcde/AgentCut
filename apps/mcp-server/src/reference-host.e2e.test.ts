@@ -97,6 +97,24 @@ describe("AgentCut MCP server against the reference host", () => {
         }),
       }),
     });
+
+    // §6.4：Agent 经 MCP 发现可编辑对象——下面的 transaction 不再需要宿主私有知识。
+    const timeline = await client.callTool({ name: "agentcut_timeline_get", arguments: {} });
+    expect(timeline.isError).not.toBe(true);
+    expect(timeline.structuredContent).toEqual({
+      timeline: expect.objectContaining({
+        timeline: expect.objectContaining({
+          sequenceId: "sequence_main",
+          totalClips: 1,
+          clips: [expect.objectContaining({
+            clipId: "clip_take_1",
+            trackId: "track_v1",
+            durationMicros: 10_010_000,
+            enabled: true,
+          })],
+        }),
+      }),
+    });
   });
 
   it("applies a revision-bound transaction, replays it, and reads the diff", async () => {

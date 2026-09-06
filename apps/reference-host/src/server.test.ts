@@ -158,6 +158,62 @@ describe("reference host core protocol", () => {
     expect(diff.body).toMatchObject({ projectId: "project_demo_001", headRevision: 0, changes: [] });
   });
 
+  it("serves paged timeline structure so agents can discover edit targets", async () => {
+    const host = await startHost();
+    const session = await createSession(host.url, ALL_CAPABILITIES, "req-timeline-001");
+    const token = session.body.accessToken as string;
+
+    // §5.3：timeline 读取需要 project:read；仅 transcript:read 的 session 被拒。
+    const transcriptOnly = await createSession(host.url, ["transcript:read"], "req-timeline-002");
+    const denied = await json(fetch(`${host.url}/api/agent/timeline`, {
+      headers: bearer(transcriptOnly.body.accessToken as string),
+    }));
+    expect(denied.status).toBe(403);
+    expect(denied.body.error.code).toBe("CAPABILITY_DENIED");
+
+    const page = await json(fetch(`${host.url}/api/agent/timeline`, { headers: bearer(token) }));
+    expect(page.status).toBe(200);
+    expect(page.body.project).toMatchObject({ id: "project_demo_001", revision: 0 });
+    expect(page.body.timeline).toMatchObject({
+      sequenceId: "sequence_main",
+      totalClips: 1,
+      offset: 0,
+      nextOffset: null,
+    });
+    expect(page.body.timeline.tracks[0]).toMatchObject({
+      trackId: "track_v1", kind: "video", order: 0, locked: false, enabled: true,
+    });
+    expect(page.body.timeline.clips[0]).toEqual({
+      clipId: "clip_take_1",
+      trackId: "track_v1",
+      kind: "media",
+      assetId: "asset_camera_a",
+      startMicros: 0,
+      // 300 ticks @ 30000/1001 → 10.01 s；换算语义见 docs/04。
+      durationMicros: 10_010_000,
+      enabled: true,
+    });
+
+    // 窗口过滤：相交判定为 start < to && end > from。
+    const miss = await json(fetch(`${host.url}/api/agent/timeline?fromMicros=20000000`, { headers: bearer(token) }));
+    expect(miss.body.timeline.totalClips).toBe(0);
+    expect(miss.body.timeline.clips).toEqual([]);
+    const hit = await json(fetch(`${host.url}/api/agent/timeline?fromMicros=9000000&toMicros=10000000`, { headers: bearer(token) }));
+    expect(hit.body.timeline.totalClips).toBe(1);
+    const edge = await json(fetch(`${host.url}/api/agent/timeline?toMicros=0`, { headers: bearer(token) }));
+    expect(edge.body.timeline.totalClips).toBe(0);
+
+    // 参数规范性：窗口顺序、canonical 整数、未知 sequence。
+    for (const query of ["?fromMicros=5&toMicros=4", "?fromMicros=01"] as const) {
+      const bad = await json(fetch(`${host.url}/api/agent/timeline${query}`, { headers: bearer(token) }));
+      expect(bad.status).toBe(400);
+      expect(bad.body.error.code).toBe("INVALID_REQUEST");
+    }
+    const unknownSequence = await json(fetch(`${host.url}/api/agent/timeline?sequenceId=sequence_nope`, { headers: bearer(token) }));
+    expect(unknownSequence.status).toBe(404);
+    expect(unknownSequence.body.error.code).toBe("OBJECT_NOT_FOUND");
+  });
+
   it("applies arbitrary validated transactions with idempotency, conflict and capability gating", async () => {
     const host = await startHost();
     const full = await createSession(host.url, ALL_CAPABILITIES, "req-write-full-001");
@@ -301,7 +357,7 @@ describe("reference host core protocol", () => {
     expect(conflict.status).toBe(409);
     expect(conflict.body.error.code).toBe("IDEMPOTENCY_CONFLICT");
 
-    // §6.4：diff 窗口约束（0 ≤ from ≤ to ≤ head）与参数规范性。
+    // §6.5：diff 窗口约束（0 ≤ from ≤ to ≤ head）与参数规范性。
     for (const query of ["", "?fromRevision=5", "?fromRevision=01"] as const) {
       const diff = await json(fetch(`${host.url}/api/agent/project/diff${query}`, {
         headers: bearer(token),

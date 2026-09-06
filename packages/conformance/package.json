@@ -1,0 +1,22 @@
+{
+  "name": "@agentcut/conformance",
+  "version": "0.1.0",
+  "description": "AgentCut protocol conformance suite: runnable against any conforming host, produces a machine-readable report.",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "bin": {
+    "agentcut-conformance": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "pnpm run build && vitest run src"
+  },
+  "devDependencies": {
+    "@agentcut/project-store": "workspace:*",
+    "@agentcut/reference-host": "workspace:*"
+  }
+}

@@ -50,6 +50,10 @@ importers:
       '@agentcut/timeline-schema':
         specifier: workspace:*
         version: link:../../packages/timeline-schema
+    devDependencies:
+      '@agentcut/conformance':
+        specifier: workspace:*
+        version: link:../../packages/conformance
 
   apps/mcp-server:
     dependencies:
@@ -162,6 +166,15 @@ importers:
       '@agentcut/timeline-schema':
         specifier: workspace:*
         version: link:../timeline-schema
+
+  packages/conformance:
+    devDependencies:
+      '@agentcut/project-store':
+        specifier: workspace:*
+        version: link:../project-store
+      '@agentcut/reference-host':
+        specifier: workspace:*
+        version: link:../../apps/reference-host
 
   packages/edit-commands:
     dependencies:

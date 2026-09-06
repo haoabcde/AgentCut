@@ -350,6 +350,50 @@ describe("AgentCut typed daemon client", () => {
     expect(fetcher.mock.calls[0]?.[0]).toEqual(new URL("http://127.0.0.1:4318/api/agent/project"));
   });
 
+  it("reads paged timeline structure for edit discovery on any compatible host", async () => {
+    const timelinePage = {
+      protocolVersion: "0.1.0" as const,
+      project: { id: "project_1", revision: 9 },
+      timeline: {
+        sequenceId: "sequence_main",
+        name: "主时间线",
+        tracks: [{ trackId: "track_v1", kind: "video", name: "主画面", order: 0, locked: false, enabled: true }],
+        totalClips: 1,
+        offset: 0,
+        limit: 200,
+        nextOffset: null,
+        clips: [{
+          clipId: "clip_take_1",
+          trackId: "track_v1",
+          kind: "media",
+          assetId: "asset_camera_a",
+          startMicros: 0,
+          durationMicros: 10_010_000,
+          enabled: true,
+        }],
+      },
+    };
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => jsonResponse(timelinePage));
+    const client = new AgentCutClient({
+      baseUrl: "http://127.0.0.1:4318",
+      fetcher,
+      session: sessionFixture(),
+    });
+
+    await expect(client.timeline()).resolves.toEqual(timelinePage);
+    expect(fetcher.mock.calls[0]?.[0]).toEqual(new URL("http://127.0.0.1:4318/api/agent/timeline"));
+
+    await client.timeline({ sequenceId: "sequence_main", fromMicros: 1_000_000, toMicros: 5_000_000, limit: 50 });
+    expect(String(fetcher.mock.calls[1]?.[0])).toBe(
+      "http://127.0.0.1:4318/api/agent/timeline?sequenceId=sequence_main&fromMicros=1000000&toMicros=5000000&limit=50",
+    );
+
+    await expect(client.timeline({ fromMicros: 9, toMicros: 1 }))
+      .rejects.toMatchObject({ code: "INVALID_INPUT" });
+    await expect(client.timeline({ limit: 0 }))
+      .rejects.toMatchObject({ code: "INVALID_INPUT" });
+  });
+
   it("applies a core timeline transaction with protocol defaults and rejects empty operations", async () => {
     const transactionResult = {
       protocolVersion: "0.1.0" as const,

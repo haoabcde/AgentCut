@@ -23,7 +23,7 @@ Non-goals: editor UI, cloud rendering, media codecs, marketplace, and any notion
 
 A conforming **host** implements the entire core surface (§6–§9) and MAY expose host extensions (§10). A conforming **agent** uses only the core surface plus extensions explicitly declared by the host (via `capabilities.extensions`). Anything not in this document is out of scope and MUST be treated as host-specific.
 
-Conformance is verified by the `@agentcut/conformance` suite (planned, §12); until it ships, the reference-host test suite is the executable definition of the core surface.
+Conformance is verified by the `@agentcut/conformance` suite (§12), which is the executable definition of the core surface and can be run against any conforming host; host-specific behavior beyond the core is pinned by the reference-host and daemon test suites.
 
 ## 3. Terminology
 
@@ -103,12 +103,13 @@ A conforming host MUST implement all routes in this section with the exact paths
 | `POST /api/agent/sessions` | bootstrap token | Capability session (§5.2) |
 | `GET /api/agent/project` | `project:read` | Project summary + facts + declared extensions |
 | `GET /api/agent/transcript` | `transcript:read` | One bounded page of transcript words |
+| `GET /api/agent/timeline` | `project:read` | Paged timeline structure (tracks/clips) for edit-target discovery |
 | `GET /api/agent/project/diff` | `project:read` | Transaction summaries between revisions |
 | `POST /api/agent/timeline/transactions` | `timeline:write:low_risk_only` | Apply a transaction (§7) |
 
 ### 6.1 `GET /api/health`
 
-`200 {"ok": true, "protocolVersion": "0.1.0"}` — no credentials.
+`200 {"ok": true, "protocolVersion": "0.1.0"}` — no credentials. Hosts MAY add fields (liveness detail, counts) but MUST NOT include source paths, media URLs, or user content.
 
 ### 6.2 `GET /api/agent/project`
 
@@ -173,7 +174,37 @@ Query: `offset` (≥ 0, default 0), `limit` (1–500, default 200). Response:
 - If the project has no transcript artifact: `404 OBJECT_NOT_FOUND`.
 - Word text is untrusted user data (§5.4).
 
-### 6.4 `GET /api/agent/project/diff`
+### 6.4 `GET /api/agent/timeline`
+
+Query: `sequenceId` (optional, defaults to the active sequence), `fromMicros` / `toMicros` (optional timeline window, canonical non-negative integers), `offset` (≥ 0, default 0), `limit` (1–500, default 200). Capability: `project:read`. Response:
+
+```json
+{
+  "protocolVersion": "0.1.0",
+  "project": { "id": "project_demo_001", "revision": 0 },
+  "timeline": {
+    "sequenceId": "sequence_main", "name": "主时间线",
+    "tracks": [
+      { "trackId": "track_v1", "kind": "video", "name": "主画面",
+        "order": 0, "locked": false, "enabled": true }
+    ],
+    "totalClips": 1, "offset": 0, "limit": 200, "nextOffset": null,
+    "clips": [
+      { "clipId": "clip_take_1", "trackId": "track_v1", "kind": "media",
+        "assetId": "asset_camera_a", "startMicros": 0, "durationMicros": 10010000,
+        "enabled": true }
+    ]
+  }
+}
+```
+
+- This is the discovery read: without it an agent has no conforming way to learn the object IDs that §7 transactions address. Agents MUST discover edit targets here (or via §6.3 transcript wording where the host links them) rather than assuming host-specific naming.
+- A clip appears when it intersects the window: `startMicros < toMicros && startMicros + durationMicros > fromMicros`. Either bound may be omitted. `fromMicros > toMicros` is `400 INVALID_REQUEST`.
+- Clips are ordered by (`track.order`, `startMicros`, `clipId`) and paged like §6.3: `nextOffset: null` ends pagination; `totalClips` counts the windowed result, not the page.
+- `assetId` is present only for asset-backed clips. Times are integer microseconds derived from IR rational times (§4 of the IR document; `seconds = value × denominator / numerator`).
+- Unknown `sequenceId`: `404 OBJECT_NOT_FOUND`. Non-canonical integers (e.g. `01`): `400 INVALID_REQUEST`.
+
+### 6.5 `GET /api/agent/project/diff`
 
 Query: `fromRevision` (required, ≥ 0), `toRevision` (optional, defaults to head). Constraint `0 ≤ from ≤ to ≤ head`; violations are `400 INVALID_REQUEST`.
 
@@ -223,6 +254,7 @@ Response `changes` lists committed transactions in order, oldest first, one entr
 - `baseRevision` MUST equal the current revision, else `409 REVISION_CONFLICT` with `details {expected, received}`. This is the optimistic-concurrency core: agents re-read `GET /api/agent/project` and `GET /api/agent/project/diff` to re-plan, never silently replay stale intent.
 - `preconditions` is a list of host-interpreted precondition objects; an empty list is always valid. A failed precondition yields `409 PRECONDITION_FAILED`.
 - `operations` MUST be a non-empty list (≤ 500; hosts MAY allow more). **The host's engine is the sole validator of operation semantics.** An agent sends typed operations; it never patches the document directly. There is deliberately no "raw document write" in the protocol.
+- Object IDs inside operations (`clipId`, `trackId`, `assetId`, …) are learned from §6.4 (or §6.3 where the host links words to media). Agents MUST NOT guess or invent identifiers; unknown IDs are rejected (`404 OBJECT_NOT_FOUND`).
 
 ### 7.2 Atomicity and validation
 
@@ -321,10 +353,11 @@ Product hosts add codes for their extensions (approvals, exports, ASR availabili
 | §5.2 session bootstrap, idempotent replay, bad bootstrap | `apps/reference-host/src/server.test.ts` |
 | §5.2 session creation strictness (unknown/duplicate/empty capabilities, TTL bounds) | `apps/reference-host/src/server.test.ts` (session creation strictly) |
 | §5.3 request-id header validation | daemon tests, `apps/reference-host/src/server.test.ts` (protocol violations) |
-| §6.2–6.4 core reads, paging, diff | `apps/reference-host/src/server.test.ts` |
+| §6.2–6.5 core reads, paging, diff | `apps/reference-host/src/server.test.ts` |
 | §6.2 `writePolicy` declaration | daemon core test (`apps/local-daemon/src/server.test.ts`), `apps/reference-host/src/server.test.ts`, MCP E2E |
 | §6.3 no-transcript 404 | `apps/reference-host/src/server.test.ts` (protocol violations) |
-| §6.4 diff window + canonical query | `apps/reference-host/src/server.test.ts` (protocol violations), daemon tests |
+| §6.4 timeline discovery read, window, paging, capability gating | `apps/reference-host/src/server.test.ts` (timeline suite), daemon core test, MCP E2E |
+| §6.5 diff window + canonical query | `apps/reference-host/src/server.test.ts` (protocol violations), daemon tests |
 | §7.1–7.4 transaction apply/replay/conflict/capability gating | `apps/reference-host/src/server.test.ts`; MCP E2E `apps/mcp-server/src/reference-host.e2e.test.ts` |
 | §7.1 actor forcing | daemon core test + `apps/reference-host/src/server.test.ts` (diff actor assertion) |
 | §7.2 atomicity, inverse records, crash recovery | `packages/project-store` suite (incl. SIGKILL harness), `packages/edit-commands` suite |
@@ -334,7 +367,7 @@ Product hosts add codes for their extensions (approvals, exports, ASR availabili
 | §10 extensions opaque to core, host validators | `packages/host-extensions/src/extensions.test.ts`, `packages/timeline-schema/src/validate.test.ts` |
 | §5.4 no source paths in responses | `packages/agent-client/src/client.test.ts` (transcript page), MCP tests |
 | Full MCP core surface over stdio→HTTP | `apps/mcp-server/src/reference-host.e2e.test.ts` |
-| Conformance suite (portable, any host) | planned — `@agentcut/conformance` (P3) |
+| Full core surface, portable to any host (incl. crash recovery with a restart controller) | `@agentcut/conformance` — `packages/conformance/src/checks/index.ts`; wired against reference-host (`packages/conformance/src/conformance.test.ts`) and local-daemon (`apps/local-daemon/src/conformance.test.ts`); CLI `agentcut-conformance` emits a machine-readable report |
 
 ## 13. Planned for 0.2 (not part of this version)
 

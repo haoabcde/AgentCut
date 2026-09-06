@@ -7,6 +7,7 @@ import {
   type AgentStatus,
   type AgentTimelineTransactionInput,
   type AgentTimelineTransactionResult,
+  type AgentTimelinePage,
   type AgentTranscriptPage,
   type ApprovalResponse,
   type CandidateSummary,
@@ -19,6 +20,7 @@ import { z } from "zod";
 export interface AgentCutMcpApi {
   status(): Promise<AgentStatus>;
   project(): Promise<AgentProjectSummary>;
+  timeline(input?: TimelineGetInput): Promise<AgentTimelinePage>;
   candidates(): Promise<CandidateSummary[]>;
   transcript(input?: { offset?: number; limit?: number }): Promise<AgentTranscriptPage>;
   applyTimelineTransaction(
@@ -46,6 +48,14 @@ export interface RevisionWriteInput {
 export interface ProjectDiffInput {
   fromRevision: number;
   toRevision?: number;
+}
+
+export interface TimelineGetInput {
+  sequenceId?: string;
+  fromMicros?: number;
+  toMicros?: number;
+  offset?: number;
+  limit?: number;
 }
 
 export interface ExportCancelInput {
@@ -114,6 +124,13 @@ const approvalApplySchema = revisionWriteSchema.extend({
   approvalToken: stableIdSchema("approvalToken", 256),
 }).strict();
 const transcriptGetSchema = z.object({
+  offset: z.number().int().nonnegative().max(10_000_000).optional(),
+  limit: z.number().int().min(1).max(500).optional(),
+}).strict();
+const timelineGetSchema = z.object({
+  sequenceId: stableIdSchema("sequenceId", 256).optional(),
+  fromMicros: z.number().int().nonnegative().optional(),
+  toMicros: z.number().int().nonnegative().optional(),
   offset: z.number().int().nonnegative().max(10_000_000).optional(),
   limit: z.number().int().min(1).max(500).optional(),
 }).strict();
@@ -232,6 +249,23 @@ export function createAgentCutMcpServer(options: CreateAgentCutMcpServerOptions 
       annotations: readOnlyAnnotations,
     },
     async () => runTool("project", () => client.project()),
+  );
+
+  server.registerTool(
+    "agentcut_timeline_get",
+    {
+      title: "Read protocol timeline structure",
+      description: "Core protocol read: paged timeline structure (tracks and clips with stable IDs, timeline positions, enabled state) for discovering edit targets. Follow nextOffset until null. Available on any AgentCut-compatible host.",
+      inputSchema: timelineGetSchema,
+      annotations: readOnlyAnnotations,
+    },
+    async (input) => runTool("timeline", () => client.timeline({
+      ...(input.sequenceId !== undefined ? { sequenceId: input.sequenceId } : {}),
+      ...(input.fromMicros !== undefined ? { fromMicros: input.fromMicros } : {}),
+      ...(input.toMicros !== undefined ? { toMicros: input.toMicros } : {}),
+      ...(input.offset !== undefined ? { offset: input.offset } : {}),
+      ...(input.limit !== undefined ? { limit: input.limit } : {}),
+    })),
   );
 
   server.registerTool(

@@ -1278,6 +1278,37 @@ describe("AgentCut local daemon", () => {
       session: expect.objectContaining({ clientId: "codex-core" }),
     });
 
+    // §6.4：时间线结构读取——Agent 借此发现可编辑对象，无需宿主私有知识。
+    const timeline = await request(options, "GET", "/api/agent/timeline", undefined, headers);
+    expect(timeline.status).toBe(200);
+    expect(timeline.body).toEqual(expect.objectContaining({
+      protocolVersion: "0.1.0",
+      timeline: expect.objectContaining({
+        sequenceId: "sequence_main",
+        totalClips: 1,
+        nextOffset: null,
+        tracks: [expect.objectContaining({ trackId: "track_v1", kind: "video", locked: false })],
+        clips: [expect.objectContaining({
+          clipId: "clip_take_1",
+          trackId: "track_v1",
+          kind: "media",
+          assetId: "asset_camera_a",
+          startMicros: 0,
+          durationMicros: 10_010_000,
+          enabled: true,
+        })],
+      }),
+    }));
+    const windowMiss = await request(
+      options, "GET", "/api/agent/timeline?fromMicros=20000000", undefined, headers,
+    );
+    expect(windowMiss.body).toEqual(expect.objectContaining({
+      timeline: expect.objectContaining({ totalClips: 0, clips: [] }),
+    }));
+    await expect(request(
+      options, "GET", "/api/agent/timeline?sequenceId=sequence_nope", undefined, headers,
+    )).rejects.toMatchObject({ code: "OBJECT_NOT_FOUND" });
+
     const transaction = {
       protocolVersion: "0.1.0",
       transactionId: "tx_core_disable_clip",
@@ -1357,6 +1388,15 @@ describe("AgentCut local daemon", () => {
       },
       headers,
     )).rejects.toMatchObject({ code: "OBJECT_NOT_FOUND" });
+
+    // 提交后的时间线读取反映新状态（rev 1，clip 已禁用）。
+    const after = await request(options, "GET", "/api/agent/timeline", undefined, headers);
+    expect(after.body).toEqual(expect.objectContaining({
+      project: expect.objectContaining({ revision: 1 }),
+      timeline: expect.objectContaining({
+        clips: [expect.objectContaining({ clipId: "clip_take_1", enabled: false })],
+      }),
+    }));
 
     const store = ProjectStore.open(fixture.databasePath);
     try {
@@ -2275,7 +2315,7 @@ describe("AgentCut local daemon", () => {
       expect(script.headers.get("content-type")).toContain("text/javascript");
       expect(await script.text()).toContain("agentcut");
       await expect(fetch(`${origin}/api/health`).then((response) => response.json()))
-        .resolves.toEqual(expect.objectContaining({ status: "ok", revision: 0 }));
+        .resolves.toEqual(expect.objectContaining({ ok: true, protocolVersion: "0.1.0", revision: 0 }));
     } finally {
       await new Promise<void>((resolve, reject) => server.close((error) => {
         if (error) reject(error);

@@ -127,6 +127,10 @@ export function createReferenceHost(options: ReferenceHostOptions): Server {
           sendJson(response, 200, transcriptPage(store.snapshot(), url), options.allowedOrigin);
           return;
         }
+        if (request.method === "GET" && url.pathname === "/api/agent/timeline") {
+          sendJson(response, 200, timelinePage(store.snapshot(), url), options.allowedOrigin);
+          return;
+        }
         if (request.method === "GET" && url.pathname === "/api/agent/project/diff") {
           sendJson(response, 200, projectDiff(store, url), options.allowedOrigin);
           return;
@@ -150,6 +154,7 @@ export function createReferenceHost(options: ReferenceHostOptions): Server {
 function coreRouteCapability(method: string, path: string): AgentCapability | undefined {
   if (method === "GET" && path === "/api/agent/project") return "project:read";
   if (method === "GET" && path === "/api/agent/transcript") return "transcript:read";
+  if (method === "GET" && path === "/api/agent/timeline") return "project:read";
   if (method === "GET" && path === "/api/agent/project/diff") return "project:read";
   if (method === "POST" && path === "/api/agent/timeline/transactions") {
     return "timeline:write:low_risk_only";
@@ -237,13 +242,78 @@ function transcriptPage(document: AgentCutProjectDocument, url: URL): unknown {
   };
 }
 
+function timelinePage(document: AgentCutProjectDocument, url: URL): unknown {
+  const sequenceId = url.searchParams.get("sequenceId") ?? document.project.activeSequenceId;
+  const sequence = document.sequences.find((candidate) => candidate.id === sequenceId);
+  if (!sequence) {
+    throw new ReferenceHostError(404, "OBJECT_NOT_FOUND", `Sequence ${sequenceId} is missing`);
+  }
+  const windowFrom = readCanonicalQueryInteger(url, "fromMicros", false);
+  const windowTo = readCanonicalQueryInteger(url, "toMicros", false);
+  if (windowFrom !== undefined && windowTo !== undefined && windowFrom > windowTo) {
+    throw new ReferenceHostError(400, "INVALID_REQUEST", "timeline window requires fromMicros <= toMicros",
+      { fromMicros: windowFrom, toMicros: windowTo });
+  }
+  const offset = readBoundedQueryInteger(url, "offset", 0, 10_000_000);
+  const limit = readBoundedQueryInteger(url, "limit", 200, 500, 1);
+  const clips = sequence.tracks
+    .flatMap((track) => track.clips.map((clip) => ({ track, clip })))
+    .map(({ track, clip }) => ({
+      track,
+      clip,
+      startMicros: toMicros(clip.timelineRange.start),
+      durationMicros: toMicros(clip.timelineRange.duration),
+    }))
+    .filter(({ startMicros, durationMicros }) =>
+      (windowFrom === undefined || startMicros + durationMicros > windowFrom)
+      && (windowTo === undefined || startMicros < windowTo)
+    )
+    .sort((left, right) =>
+      left.track.order - right.track.order
+      || left.startMicros - right.startMicros
+      || left.clip.id.localeCompare(right.clip.id)
+    );
+  const page = clips.slice(offset, offset + limit);
+  return {
+    protocolVersion: REFERENCE_PROTOCOL_VERSION,
+    project: { id: document.project.id, revision: document.project.revision },
+    timeline: {
+      sequenceId: sequence.id,
+      name: sequence.name,
+      tracks: [...sequence.tracks]
+        .sort((left, right) => left.order - right.order)
+        .map((track) => ({
+          trackId: track.id,
+          kind: track.kind,
+          name: track.name,
+          order: track.order,
+          locked: track.locked,
+          enabled: track.enabled,
+        })),
+      totalClips: clips.length,
+      offset,
+      limit,
+      nextOffset: offset + page.length < clips.length ? offset + page.length : null,
+      clips: page.map(({ track, clip, startMicros, durationMicros }) => ({
+        clipId: clip.id,
+        trackId: track.id,
+        kind: clip.kind,
+        ...(clip.assetId ? { assetId: clip.assetId } : {}),
+        startMicros,
+        durationMicros,
+        enabled: clip.enabled,
+      })),
+    },
+  };
+}
+
 function projectDiff(store: ProjectStore, url: URL): unknown {
   const headRevision = store.snapshot().project.revision;
-  const fromRevision = readRevisionQuery(url, "fromRevision", true);
+  const fromRevision = readCanonicalQueryInteger(url, "fromRevision", true);
   if (fromRevision === undefined) {
     throw new ReferenceHostError(400, "INVALID_REQUEST", "fromRevision is required");
   }
-  const toRevision = readRevisionQuery(url, "toRevision", false) ?? headRevision;
+  const toRevision = readCanonicalQueryInteger(url, "toRevision", false) ?? headRevision;
   if (fromRevision > toRevision || toRevision > headRevision) {
     throw new ReferenceHostError(400, "INVALID_REQUEST",
       "project diff requires 0 <= fromRevision <= toRevision <= headRevision",
@@ -442,7 +512,7 @@ function readStableString(body: Record<string, unknown>, key: string, maxLength:
   return value;
 }
 
-function readRevisionQuery(url: URL, key: string, required: boolean): number | undefined {
+function readCanonicalQueryInteger(url: URL, key: string, required: boolean): number | undefined {
   const value = url.searchParams.get(key);
   if (value === null) {
     if (required) {

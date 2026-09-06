@@ -297,6 +297,10 @@ export async function handleAgentCutRequest(
         sendJson(response, 200, agentTranscriptResponse(store, url), options.allowedOrigin);
         return;
       }
+      if (agentRoute.kind === "timeline_get") {
+        sendJson(response, 200, agentTimelineResponse(store, url), options.allowedOrigin);
+        return;
+      }
       if (agentRoute.kind === "semantic_findings") {
         const body = await readJsonBody(request);
         const requestId = readStableString(body, "requestId", 128);
@@ -465,8 +469,10 @@ export async function handleAgentCutRequest(
   if (request.method === "GET" && url.pathname === "/api/health") {
     const store = openHostStore(options.databasePath);
     try {
+      // 协议 §6.1：{ok, protocolVersion} 为契约字段；projectId/revision 为本地工具的兼容附加字段。
       sendJson(response, 200, {
-        status: "ok",
+        ok: true,
+        protocolVersion: "0.1.0",
         projectId: store.snapshot().project.id,
         revision: store.snapshot().project.revision,
       }, options.allowedOrigin);
@@ -487,7 +493,7 @@ export async function handleAgentCutRequest(
   const candidatePreview = /^\/api\/candidates\/([^/]+)\/preview$/.exec(url.pathname);
   if (request.method === "GET" && candidatePreview) {
     const candidateId = decodeURIComponent(candidatePreview[1]!);
-    const baseRevision = readRevisionQuery(url, "baseRevision", true)!;
+    const baseRevision = readCanonicalQueryInteger(url, "baseRevision", true)!;
     const store = openHostStore(options.databasePath);
     try {
       const document = store.snapshot();
@@ -1072,6 +1078,7 @@ type AgentRoute =
   | { kind: "project_get"; capability: AgentCapability }
   | { kind: "project_diff"; capability: AgentCapability }
   | { kind: "transcript_get"; capability: AgentCapability }
+  | { kind: "timeline_get"; capability: AgentCapability }
   | { kind: "timeline_transaction"; capability: AgentCapability }
   | { kind: "semantic_findings"; capability: AgentCapability }
   | { kind: "approval_request"; capability: AgentCapability }
@@ -1087,6 +1094,9 @@ function resolveAgentRoute(method: string, path: string): AgentRoute | undefined
   }
   if (method === "GET" && path === "/api/agent/transcript") {
     return { kind: "transcript_get", capability: "transcript:read" };
+  }
+  if (method === "GET" && path === "/api/agent/timeline") {
+    return { kind: "timeline_get", capability: "project:read" };
   }
   if (method === "POST" && path === "/api/agent/semantic-findings") {
     return { kind: "semantic_findings", capability: "analysis:propose" };
@@ -1630,9 +1640,9 @@ function applyAgentTimelineTransaction(
 
 function projectDiffResponse(store: ProjectStore, url: URL): unknown {
   const headRevision = store.snapshot().project.revision;
-  const fromRevision = readRevisionQuery(url, "fromRevision", true);
+  const fromRevision = readCanonicalQueryInteger(url, "fromRevision", true);
   if (fromRevision === undefined) throw new Error("Invariant violation: required fromRevision is missing");
-  const toRevision = readRevisionQuery(url, "toRevision", false) ?? headRevision;
+  const toRevision = readCanonicalQueryInteger(url, "toRevision", false) ?? headRevision;
   if (fromRevision > toRevision || toRevision > headRevision) {
     throw new ApiError(
       "INVALID_REQUEST",
@@ -1649,6 +1659,71 @@ function projectDiffResponse(store: ProjectStore, url: URL): unknown {
     toRevision,
     headRevision,
     changes: records.map(commandDiffSummary),
+  };
+}
+
+/** 协议 core §6.4：时间线结构读取，让 Agent 能发现可编辑对象（轨道/片段 ID 与时间位置）。 */
+function agentTimelineResponse(store: ProjectStore, url: URL): unknown {
+  const document = store.snapshot();
+  const sequenceId = url.searchParams.get("sequenceId") ?? document.project.activeSequenceId;
+  const sequence = document.sequences.find((candidate) => candidate.id === sequenceId);
+  if (!sequence) throw new ApiError("OBJECT_NOT_FOUND", `Sequence ${sequenceId} is missing`);
+  const windowFrom = readCanonicalQueryInteger(url, "fromMicros", false);
+  const windowTo = readCanonicalQueryInteger(url, "toMicros", false);
+  if (windowFrom !== undefined && windowTo !== undefined && windowFrom > windowTo) {
+    throw new ApiError("INVALID_REQUEST", "timeline window requires fromMicros <= toMicros",
+      { fromMicros: windowFrom, toMicros: windowTo });
+  }
+  const offset = readBoundedQueryInteger(url, "offset", 0, 10_000_000);
+  const limit = readBoundedQueryInteger(url, "limit", 200, 500, 1);
+  const clips = sequence.tracks
+    .flatMap((track) => track.clips.map((clip) => ({ track, clip })))
+    .map(({ track, clip }) => ({
+      track,
+      clip,
+      startMicros: toMicros(clip.timelineRange.start),
+      durationMicros: toMicros(clip.timelineRange.duration),
+    }))
+    .filter(({ startMicros, durationMicros }) =>
+      (windowFrom === undefined || startMicros + durationMicros > windowFrom)
+      && (windowTo === undefined || startMicros < windowTo)
+    )
+    .sort((left, right) =>
+      left.track.order - right.track.order
+      || left.startMicros - right.startMicros
+      || left.clip.id.localeCompare(right.clip.id)
+    );
+  const page = clips.slice(offset, offset + limit);
+  return {
+    protocolVersion: "0.1.0",
+    project: { id: document.project.id, revision: document.project.revision },
+    timeline: {
+      sequenceId: sequence.id,
+      name: sequence.name,
+      tracks: [...sequence.tracks]
+        .sort((left, right) => left.order - right.order)
+        .map((track) => ({
+          trackId: track.id,
+          kind: track.kind,
+          name: track.name,
+          order: track.order,
+          locked: track.locked,
+          enabled: track.enabled,
+        })),
+      totalClips: clips.length,
+      offset,
+      limit,
+      nextOffset: offset + page.length < clips.length ? offset + page.length : null,
+      clips: page.map(({ track, clip, startMicros, durationMicros }) => ({
+        clipId: clip.id,
+        trackId: track.id,
+        kind: clip.kind,
+        ...(clip.assetId ? { assetId: clip.assetId } : {}),
+        startMicros,
+        durationMicros,
+        enabled: clip.enabled,
+      })),
+    },
   };
 }
 
@@ -1793,7 +1868,7 @@ function assertAgentSemanticFindings(findings: SemanticReviewFinding[]): void {
   }
 }
 
-function readRevisionQuery(url: URL, key: string, required: boolean): number | undefined {
+function readCanonicalQueryInteger(url: URL, key: string, required: boolean): number | undefined {
   const raw = url.searchParams.get(key);
   if (raw === null) {
     if (required) throw new ApiError("INVALID_REQUEST", `${key} is required`);

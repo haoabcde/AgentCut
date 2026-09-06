@@ -2,6 +2,42 @@
 
 本文件记录已经实际落地的产品、架构和工程变更。每次有效修改都应同步更新，以便后续 Agent 和开发者区分已验证事实、执行假设与待完成事项。
 
+## 2026-09-06：P3 推进——conformance 套件、timeline 发现读与真实 Agent E2E
+
+### 目标
+
+执行 docs/19 P3：`@agentcut/conformance` 便携一致性套件（协议规范的可执行定义）、真实 Agent（Claude Code / Codex）经 MCP 的可重复 E2E、reference-host 与 daemon 双宿主接线。
+
+### 对抗性审查发现的协议缺口（先修协议，再写套件）
+
+- **core 面缺时间线结构读**：0.1 已冻结的 6 条路由里，Agent 只能读工程概要/Transcript/diff——没有任何合规途径得知 transaction 可寻址的 `clipId`/`trackId`。两个宿主的既有测试全是硬编码 fixture ID 掩盖了这一点；真实 Agent E2E 会立即撞上（否则只能把 clipId 写进 prompt 作弊）。这正是"任何 Agent 驱动任何宿主"的硬前提，属协议级缺陷而非实现细节。
+  - 修复（只增兼容）：新增 core 路由 `GET /api/agent/timeline`（规范 §6.4，原 diff 顺延 §6.5）——`sequenceId`/`fromMicros`/`toMicros` 窗口 + `offset`/`limit` 分页，capability `project:read`，排序（track.order, startMicros, clipId）稳定。五层同步落地：规范正文与 §12 映射、reference-host、daemon、agent-client `timeline()`、MCP 新工具 `agentcut_timeline_get`（16 工具）；§7.1 增补"对象 ID 必须来自 §6.4/§6.3 发现，不得猜测"。changeset `timeline-discovery-read.md`。
+- **daemon `/api/health` 不符 §6.1**：返回 `{status:"ok", projectId, revision}` 而非契约的 `{ok:true, protocolVersion}`。改为契约字段 + 保留本地兼容字段，规范补注"宿主可加字段但不得含源路径/媒体 URL/用户内容"。conformance 套件首次运行前就抓到一个真实漂移——套件的存在价值当场兑现。
+
+### @agentcut/conformance（packages/conformance，零运行时依赖）
+
+- 22 项 core 检查 + 1 项崩溃恢复检查，逐条挂规范条款：会话（bootstrap 拒绝、严格校验、幂等重放）、core 读（概要/writePolicy、Transcript 分页一致性或如实 404、timeline 发现与窗口/参数规范性、timeline capability 门禁）、事务（201/200 重放、IDEMPOTENCY_CONFLICT、REVISION_CONFLICT、未知 operation 422、混合载荷原子性、未知对象 404、写门禁、actor 强制、协议版本拒绝、审计头限制）、diff（内容+afterHash、actor、非法窗口）、错误模型；`crash.recovery-state` 经 `HostController.restart()` 重启宿主后验证 revision/幂等账本/diff 历史存续。
+- 报告 JSON：verdict + 逐条 pass/fail/skip（skip 分 `host-content`/`no-controller`/`prerequisite` 三类，前两类需 `--allow-skip` 许可或提供 controller，否则判 fail）；协议版本不匹配立即中止避免误导性级联。CLI `agentcut-conformance` + 库 API（宿主 CI 嵌入用）。
+- 接线：reference-host（套件自带测试，含重启 controller 全绿）与 local-daemon（`apps/local-daemon/src/conformance.test.ts`，即 TalkCut CI 未来接入的模式）。
+- 设计要点：幂等键按 runId 随机化可安全重跑；写探针指向已发现的 clip、无 clip 时事务组显式 skip；事务类探针显式指向当前 head，避免先撞 REVISION_CONFLICT 而测不到目标语义（engine 校验顺序：projectId→baseRevision→未知类型；store.commit 先幂等后 revision，同键异载荷探针因此必须保留过期 baseRevision——恰好钉住 §7.4 不变量）。
+
+### 真实 Agent E2E（scripts/agent-e2e.mjs）
+
+- 非交互驱动 `claude -p`（--mcp-config + --allowedTools）与 `codex exec`（-c mcp_servers.* TOML 覆盖，不动用户 CODEX_HOME 以保登录态）对真实 reference-host 进程完成：读工程 → timeline 发现 → transcript 采样 → 一次 clip.update 原子事务 → diff 确认 actor=agentcut-mcp。
+- 验收以宿主状态为准（revision +1、diff 恰一条、actor/operation/objectIds、clip 已禁用），不信任 agent 自述；会话日志与验证报告落盘 /tmp/agent-e2e，脚本可重复（全新临时工程）。
+
+### 验证
+
+- `CI=true AGENTCUT_FFMPEG_PATH=/opt/homebrew/opt/ffmpeg-full/bin/ffmpeg pnpm check` exit 0：**451/451 测试通过**（P2 的 447 + conformance 套件 3 项 + daemon 接线 1 项）。
+- conformance 对 reference-host：25/25 检查通过（含 crash.recovery-state 重启证据）；对 local-daemon：25/25 全绿（`apps/local-daemon/src/conformance.test.ts`）；对故意不合规假宿主：逐条 fail 且报告给出可指向证据（阴性测试）。
+- 真实 Agent E2E（2026-09-06 本机实跑）：Claude Code 50.8s 与 Codex 57.2s 各完成完整会话，宿主状态独立验收均 pass——revision 0→1、diff 恰一条 clip.update/clip_take_1、actor 强制为 agentcut-mcp、clip 已禁用；日志与报告在 /tmp/agentcut-agent-e2e/。
+- 过程中发现并修复：conformance 测试 harness 首次启动时 `server?.close(cb)` 对 undefined 求值为 undefined 导致永不 resolve（纯 Node 下重启控制器路径正确，vitest 用例首次调用即暴露）；daemon 遗留 health 断言引用被替换的 `status:"ok"` 字段（改为断言契约字段）。
+
+### 限制与后续
+
+- TalkCut 私有仓库的 conformance 接入需触碰 `~/Developer/talkcut`，待用户确认；本仓库内以 daemon 同模式测试承接 Gate 的 AgentCut 侧。
+- G3 产品语境遗留条目（Studio 审批 UI、handoff 文件、撤销矩阵）仍属 TalkCut 产品域（docs/19 §3 P3 已注明）。
+
 ## 2026-09-06：P2 推进——策略声明、对账测试与版本化工具
 
 ### 目标

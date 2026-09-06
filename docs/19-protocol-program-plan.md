@@ -107,11 +107,11 @@ TalkCut（私有，首个宿主产品）
 
 **交付**
 
-- `@agentcut/conformance`：任何宿主实现可运行的协议一致性测试（事务、幂等、冲突、审批、会话撤销、崩溃恢复语义），输出机器可读报告。
-- 真实外部 Agent E2E：Codex 与 Claude Code 各经 MCP 完成一次完整剪辑会话（读工程→分析→proposal→审批→应用→diff 续跑），录为可回放脚本。
-- 补齐 2026-08 遗留的真实 Codex 宿主矩阵（原 G3 补跑 runbook，迁至协议语境）。
+- `@agentcut/conformance`：任何宿主实现可运行的协议一致性测试，输出机器可读报告（CLI + 库 API）。范围随协议规范 v0.1 冻结结果收敛为 **core 面**：会话（bootstrap、严格校验、幂等重放）、core 读（project/writePolicy、transcript、timeline §6.4 发现读）、事务（201/200 幂等重放、IDEMPOTENCY_CONFLICT、REVISION_CONFLICT、未知 operation、原子性、未知对象、capability 门禁、actor 强制、协议版本拒绝、审计头）、diff、错误模型、崩溃恢复（需宿主重启 controller）。审批与会话撤销在 0.1 中属宿主扩展域（§10/§11），不进 core conformance；扩展一致性测试随扩展规范另行定义。
+- 真实外部 Agent E2E：`scripts/agent-e2e.mjs`——Codex 与 Claude Code 各经 MCP 对真实 reference-host 完成一次完整会话（读工程 → timeline 发现 → transcript → 原子事务 → diff 确认），宿主状态独立验收（不信任 agent 自述），会话日志与报告落盘、可重复执行。
+- 补齐 2026-08 遗留的真实 Codex 宿主矩阵：协议语境下由 agent-e2e 承接（接管读取、事务提交、diff 恢复、actor 审计）；原产品语境条目（Studio 审批 UI、handoff 文件、撤销矩阵）仍属 TalkCut 产品域，不在本仓库 Gate 内。
 
-**Gate P3**：reference-host 与 TalkCut daemon 双双通过 conformance；两个真实 Agent 的 E2E 脚本可重复通过。
+**Gate P3**：reference-host 与 TalkCut daemon（本仓库内以 `apps/local-daemon/src/conformance.test.ts` 同模式承接；TalkCut 私有仓库迁移待用户确认）双双通过 conformance；两个真实 Agent 的 E2E 脚本可重复通过。
 
 ### P4 互操作：OTIO adapter（约 2 周）
 
@@ -166,6 +166,6 @@ P0(1) → P1(2–3) → P2(2) → P3(2) → P4(2) → P5(1–2)，约 **10–12 
 | P0 归属清理与冻结 | ✅ 关闭（2026-09-06） | 快照提交 `09997d2`；三方比对零迁移；429/429 测试基线。 |
 | P1 内核解耦与参考宿主 | ✅ AgentCut 侧关闭（2026-09-06） | host-extensions 迁移 + 扩展校验器钩子 + reference-host + core 读写路径 + MCP core 工具 + MCP↔reference-host E2E + daemon core 路由测试全部落盘；`pnpm check` exit 0、443/443 测试通过。发现并修复两类测试前不可见的问题：宿主级 revision 预检破坏幂等重放、alpha 门对未登记工程的形状崩溃。协议规范 v0.1 草案与 OTIO ADR 一并产出（原属 P2，提前）。TalkCut 侧"以扩展命名空间暴露原有方法"需触碰 `~/Developer/talkcut`，按 GOAL.md 规则待用户确认，不阻塞本仓库后续阶段。 |
 | P2 协议硬化与规范 | ✅ AgentCut 侧关闭（2026-09-06） | 四项协议改造全部落地：开放 metadata 命名空间（extensionValidators 钩子）✅、风险/审批策略 capability 声明化（`writePolicy.timelineTransactions`，宿主声明语义、协议不编码风险定义）✅、任意合法 transaction 写路径 ✅、按需感知（transcript 分页已有；视觉抽样接口形状定义进规范 §13，0.2 候选，无媒体管线需求前维持定义态）✅。规范 v0.1 ✅、OTIO ADR ✅、changesets + `docs/protocol/versioning.md`（0.x 三版弃用窗口政策）✅。Gate 对账：规范 §12 条款↔测试映射复核完成，补齐违例/session 严格校验两组测试（445/445 绿）；P1–P2 协议面变更均为只增兼容，无破坏性变更需要走弃用窗口。对账属持续义务：今后每处协议面变更必须同步 §12 映射。 |
-| P3 conformance 与真实 Agent E2E | ⬜ 未开始 | |
+| P3 conformance 与真实 Agent E2E | ✅ AgentCut 侧关闭（2026-09-06） | `@agentcut/conformance`（22 core 检查 + 崩溃恢复，逐条挂规范条款，机器可读报告，CLI + 库 API）落地并对 reference-host 与 local-daemon 双双全绿（各 25/25，含重启后 revision/幂等账本/diff 存续证据）；TalkCut 私有仓库迁移按 GOAL.md 待用户确认。真实 Agent E2E 落地并通过：Claude Code（50.8s）与 Codex（57.2s）经 MCP 对真实 reference-host 完成读工程→timeline 发现→transcript→原子事务→diff 确认，宿主状态独立验收（脚本 `scripts/agent-e2e.mjs` 可重复）。过程中发现协议缺口并以只增兼容方式补 core 路由 `GET /api/agent/timeline`（§6.4，五层同步：规范/双宿主/agent-client/MCP 工具），并修正 daemon `/api/health` 不符 §6.1 的漂移。`pnpm check` exit 0、451/451 测试通过。 |
 | P4 OTIO adapter | ⬜ 未开始 | |
 | P5 开源发布 | ⬜ 未开始 | 材料准备可启动，公开前必须停下请示。 |

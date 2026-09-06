@@ -81,6 +81,7 @@ describe("AgentCut MCP stdio server", () => {
       "agentcut_semantic_analyze",
       "agentcut_semantic_findings_propose",
       "agentcut_timeline_apply_transaction",
+      "agentcut_timeline_get",
       "agentcut_transcript_get",
     ]);
     expect(stderr).not.toContain("MCP_BUILD_FAILED");

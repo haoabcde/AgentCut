@@ -99,6 +99,37 @@ export interface AgentTranscriptPage {
   };
 }
 
+/** 协议 core §6.4：时间线结构分页读取。 */
+export interface AgentTimelinePage {
+  protocolVersion: "0.1.0";
+  project: { id: string; revision: number };
+  timeline: {
+    sequenceId: string;
+    name: string;
+    tracks: Array<{
+      trackId: string;
+      kind: string;
+      name: string;
+      order: number;
+      locked: boolean;
+      enabled: boolean;
+    }>;
+    totalClips: number;
+    offset: number;
+    limit: number;
+    nextOffset: number | null;
+    clips: Array<{
+      clipId: string;
+      trackId: string;
+      kind: string;
+      assetId?: string;
+      startMicros: number;
+      durationMicros: number;
+      enabled: boolean;
+    }>;
+  };
+}
+
 export interface ReviewCandidate {
   candidateId: string;
   targetKind: "words" | "gap";

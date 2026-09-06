@@ -53,9 +53,32 @@ describe("AgentCut MCP in-memory contract", () => {
         inverseOperationCount: 1,
       },
     };
+    const timelinePage = {
+      protocolVersion: "0.1.0" as const,
+      project: { id: "project_1", revision: 9 },
+      timeline: {
+        sequenceId: "sequence_main",
+        name: "主时间线",
+        tracks: [{ trackId: "track_v1", kind: "video", name: "主画面", order: 0, locked: false, enabled: true }],
+        totalClips: 1,
+        offset: 0,
+        limit: 200,
+        nextOffset: null,
+        clips: [{
+          clipId: "clip_1",
+          trackId: "track_v1",
+          kind: "media",
+          assetId: "asset_1",
+          startMicros: 0,
+          durationMicros: 10_010_000,
+          enabled: true,
+        }],
+      },
+    };
     const api: AgentCutMcpApi = {
       status: vi.fn(async () => status),
       project: vi.fn(async () => projectSummary),
+      timeline: vi.fn(async () => timelinePage),
       candidates: vi.fn(async () => []),
       transcript: vi.fn(async () => transcript),
       applyTimelineTransaction: vi.fn(async () => timelineResult),
@@ -98,12 +121,21 @@ describe("AgentCut MCP in-memory contract", () => {
         "agentcut_semantic_analyze",
         "agentcut_semantic_findings_propose",
         "agentcut_timeline_apply_transaction",
+        "agentcut_timeline_get",
         "agentcut_transcript_get",
       ]);
 
       const project = await client.callTool({ name: "agentcut_project_get", arguments: {} });
       expect(project.isError).not.toBe(true);
       expect(project.structuredContent).toEqual({ project: projectSummary });
+
+      const timeline = await client.callTool({
+        name: "agentcut_timeline_get",
+        arguments: { sequenceId: "sequence_main", limit: 50 },
+      });
+      expect(timeline.isError).not.toBe(true);
+      expect(timeline.structuredContent).toEqual({ timeline: timelinePage });
+      expect(api.timeline).toHaveBeenCalledWith({ sequenceId: "sequence_main", limit: 50 });
 
       const applied = await client.callTool({
         name: "agentcut_timeline_apply_transaction",
