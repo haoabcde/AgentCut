@@ -32,6 +32,9 @@ importers:
       '@agentcut/edit-commands':
         specifier: workspace:*
         version: link:../../packages/edit-commands
+      '@agentcut/host-extensions':
+        specifier: workspace:*
+        version: link:../../packages/host-extensions
       '@agentcut/project-store':
         specifier: workspace:*
         version: link:../../packages/project-store
@@ -57,9 +60,27 @@ importers:
         specifier: 4.4.3
         version: 4.4.3
     devDependencies:
+      '@agentcut/project-store':
+        specifier: workspace:*
+        version: link:../../packages/project-store
+      '@agentcut/reference-host':
+        specifier: workspace:*
+        version: link:../reference-host
       '@modelcontextprotocol/client':
         specifier: 2.0.0
         version: 2.0.0
+
+  apps/reference-host:
+    dependencies:
+      '@agentcut/edit-commands':
+        specifier: workspace:*
+        version: link:../../packages/edit-commands
+      '@agentcut/project-store':
+        specifier: workspace:*
+        version: link:../../packages/project-store
+      '@agentcut/timeline-schema':
+        specifier: workspace:*
+        version: link:../../packages/timeline-schema
 
   apps/studio:
     dependencies:
@@ -99,6 +120,9 @@ importers:
       '@agentcut/edit-commands':
         specifier: workspace:*
         version: link:../edit-commands
+      '@agentcut/host-extensions':
+        specifier: workspace:*
+        version: link:../host-extensions
       '@agentcut/project-store':
         specifier: workspace:*
         version: link:../project-store
@@ -145,8 +169,17 @@ importers:
         specifier: workspace:*
         version: link:../timeline-schema
 
+  packages/host-extensions:
+    dependencies:
+      '@agentcut/timeline-schema':
+        specifier: workspace:*
+        version: link:../timeline-schema
+
   packages/media-ingest:
     dependencies:
+      '@agentcut/host-extensions':
+        specifier: workspace:*
+        version: link:../host-extensions
       '@agentcut/timeline-schema':
         specifier: workspace:*
         version: link:../timeline-schema
@@ -195,6 +228,9 @@ importers:
       '@agentcut/asr-engine':
         specifier: workspace:*
         version: link:../asr-engine
+      '@agentcut/host-extensions':
+        specifier: workspace:*
+        version: link:../host-extensions
       '@agentcut/media-ingest':
         specifier: workspace:*
         version: link:../media-ingest

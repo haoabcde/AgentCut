@@ -17,6 +17,8 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@agentcut/project-store": "workspace:*",
+    "@agentcut/reference-host": "workspace:*",
     "@modelcontextprotocol/client": "2.0.0"
   }
 }

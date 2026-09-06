@@ -2,6 +2,49 @@
 
 本文件记录已经实际落地的产品、架构和工程变更。每次有效修改都应同步更新，以便后续 Agent 和开发者区分已验证事实、执行假设与待完成事项。
 
+## 2026-09-06：P1 内核解耦与参考宿主（代码完成）
+
+### 目标
+
+执行 docs/19 P1：把产品概念从内核摘除、以最小参考宿主证明协议可独立实现、在 MCP/客户端面建立 core 与宿主扩展的分层。
+
+### 实际改动
+
+- **`packages/host-extensions`（新包）**：`alpha-trial`、`preview-proxy`（含语义校验器 `validatePreviewProxyBindings` 与 `TALKING_HEAD_EXTENSION_VALIDATORS`）从 `timeline-schema` 迁入；数据键（`agentcut.alphaTrial`/`agentcut.previewProxy`）不变，既有 dogfood 工程仍可解析。
+- **`timeline-schema` 扩展钩子**：`validateProjectDocument(value, {extensionValidators})` 新增可选扩展校验器参数；核心校验对未知命名空间不透明。`edit-commands`（engine/TransactionEngine）与 `project-store`（open/create 及全部 parse/replay 调用点）全链路透传该参数。
+- **产品层注册校验器**：`local-daemon`（`openHostStore` 统一包装全部 `ProjectStore.open` 调用点）、`rough-cut-workflow`、`alpha-gate` 五个 CLI/模块、三个 dogfood 脚本恢复原有 preview-proxy 语义校验行为（若不注册，严格性会静默回退——这是本次对抗性审查发现并修复的主要遗漏）。
+- **`apps/reference-host`（新包）**：最小协议宿主，仅实现 core 面（health/session/project/transcript/diff/timeline transactions）+ capability session，无任何媒体管线；依赖仅 project-store/edit-commands/timeline-schema。与 daemon 的核心路由逐项对齐（响应形状、错误码→HTTP 映射、1MB body 限制、TTL 边界、query 规范性、幂等/冲突语义、201/200 状态码约定）。
+- **core 写路径**：daemon 与 reference-host 均新增 `POST /api/agent/timeline/transactions`（任意通过校验的 typed operation 组合、原子提交、revision 绑定、幂等重放、actor 强制为 session.clientId）；`GET /api/agent/project`（core 工程概要，`capabilities.extensions` 由宿主声明：daemon 为 `["talking-head-review"]`，reference-host 为 `[]`）。
+- **`agent-client`/`mcp-server` core 方法**：client 新增 `project()`、`applyTimelineTransaction()`（operations 结构化透传，客户端不复制 operation schema）；MCP 新增 `agentcut_project_get`、`agentcut_timeline_apply_transaction` 两个 core 工具（工具面 13→15）；in-memory contract 同步。
+- **E2E**：`apps/mcp-server/src/reference-host.e2e.test.ts`——打包后的 MCP stdio server 驱动真实 reference-host（HTTP wire），覆盖 core 读、事务应用/幂等重放/revision 冲突、diff、以及 product-only 工具在无扩展宿主上的诚实 404。
+- **文档**：新增 `docs/protocol/agentcut-protocol-0.1.md`（英文为主的协议规范 v0.1 草案，含逐条-测试映射表与 0.2 规划）、`docs/protocol/adr-001-internal-ir-not-otio.md`（内部 IR 不采用 OTIO 的 ADR）；docs/05 头部标注被协议规范取代的范围；README 文档索引 20/21 项。
+
+### 对抗性审查发现并修复
+
+- reference-host 的 `toMicros` 时间换算写反（用了 `value·numerator/denominator`，IR 语义为 `seconds = value·denominator/numerator`，docs/04）；对 rate 1000/1 的素材会偏差 1000×，且原测试断言不含时间字段、无法发现。已修复并在 reference-host 测试中钉住 fixture 词级时间（1000 ticks @1000/1 → 1,000,000 µs）。
+- reference-host diff 响应缺 `objectIds` 字段（client 类型与 daemon 均有）；已补齐并在测试钉住。
+- 错误码→HTTP 映射不完整（引擎 10 个码中 LOCKED/PRECONDITION_FAILED/SEQUENCE_NOT_FOUND/PROJECT_MISMATCH/DUPLICATE_ID/INVALID_OPERATION 未映射）；已与 daemon 逐码对齐。
+- 事务应用状态码不一致（reference-host 恒 200，daemon 首次 201/重放 200）；已统一为 201/200 并写入协议规范 §7.3。
+
+### 验证
+
+- 首轮 `pnpm check` 暴露并修复 9 处问题（全部为静态核对未覆盖到的运行时/类型事实）：`extensionValidators` 参数在 `exactOptionalPropertyTypes` 下的 3 处类型不兼容（readonly/undefined 联合）；reference-host 两处（options `| undefined`、`TimelineTransactionResult` 返回类型）；zod v4 `z.record` 需显式键 schema；daemon `ApiError` 参数顺序错误（code 在前非 status）；host-extensions 测试 fixture 双重断言转型；agent-client 事务请求体键序断言、审计头推导（`#request` 现同时识别 `idempotencyKey` 作为 X-AgentCut-Request-Id）；两处 `server.listen` 异步端口读取；MCP E2E fixture 相对路径层级与 words 数组匹配方式。
+- **协议语义修复（测试驱动发现）**：宿主级 revision 预检破坏幂等重放（过期 baseRevision 的精确重试被 409 拒绝，违反协议 §7.4）——已从 daemon 与 reference-host 的 core 路由删除预检，改由 `ProjectStore.commit` 先查幂等、engine 对新事务校验 revision；`ProjectStoreError`（CAPABILITY_DENIED 等）在 reference-host 错误层未映射导致 500，已按 `statusForCode` 对齐。
+- **产品策略与协议分层修复**：`assertAlphaTrialEditingActive` 为读登记状态而全量计算 alpha 审计（按"全部 clip 为启用媒体"渲染），未登记但含 disabled clip 的工程会让一切写入崩溃——core 事务路由首测即触发。已加短路：先廉价读 `agentcut.alphaTrial` extensions，未登记直接放行；登记工程行为不变。
+- 最终 `CI=true AGENTCUT_FFMPEG_PATH=/opt/homebrew/opt/ffmpeg-full/bin/ffmpeg pnpm check` **exit 0**：17 个包构建与 strict typecheck 通过，**443/443 测试通过**（429 基线 +16 新增 −2 从 timeline-schema 迁入 host-extensions 的 alpha-trial 用例，净增 14）。
+- TalkCut 未触碰；`~/Developer/talkcut` 零读写。
+
+### 限制与后续
+
+- P1 Gate 的 "TalkCut daemon 以扩展命名空间方式暴露原有口播方法" 一项需要触碰 `~/Developer/talkcut`，属 GOAL.md 停下请示范围，待用户确认后执行；本仓库内（daemon 快照）已实现等价改造并随上述全绿验证。AgentCut 侧其余 Gate 项（reference-host 持久化/崩溃恢复语义来自 project-store 套件 18 项 + reference-host E2E 5 项；MCP core E2E 3 项）已满足。
+- "扩展走通用调用通道"（mcp-server 以单一通用工具承载宿主扩展方法）未实现：当前 MCP 仍内置 13 个口播宿主扩展工具，待 TalkCut 自持 MCP server 时收敛。已记入 docs/protocol §13 与后续阶段。
+- P1 期间提前产出了两项 P2 交付：协议规范 v0.1 草案、OTIO ADR-001。
+
+### 限制与后续
+
+- P1 Gate 的 "TalkCut daemon 以扩展命名空间方式暴露原有口播方法" 一项需要触碰 `~/Developer/talkcut`，属 GOAL.md 停下请示范围，待用户确认后执行；本仓库内（daemon 快照）已实现等价改造。AgentCut 侧其余 Gate 项（reference-host 持久化语义、MCP core E2E）以本条目验证结果为准。
+- "扩展走通用调用通道"（mcp-server 以单一通用工具承载宿主扩展方法）未实现：当前 MCP 仍内置 13 个口播宿主扩展工具，待 TalkCut 自持 MCP server 时收敛。已记入 docs/protocol §13 与后续阶段。
+
 ## 2026-09-06：确立长程 Goal（GOAL.md）
 
 ### 目标

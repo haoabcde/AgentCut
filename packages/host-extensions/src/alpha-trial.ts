@@ -1,4 +1,4 @@
-import type { AgentCutProjectDocument } from "./types.js";
+import type { AgentCutProjectDocument } from "@agentcut/timeline-schema";
 
 export const ALPHA_TRIAL_EXTENSION_KEY = "agentcut.alphaTrial";
 

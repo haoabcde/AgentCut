@@ -319,6 +319,99 @@ describe("AgentCut typed daemon client", () => {
     );
   });
 
+  it("reads the core protocol project summary available on any compatible host", async () => {
+    const projectSummary = {
+      protocolVersion: "0.1.0" as const,
+      project: {
+        id: "project_1",
+        name: "Fixture",
+        revision: 9,
+        createdAt: "2026-08-10T00:00:00.000Z",
+        updatedAt: "2026-08-10T00:00:00.000Z",
+        activeSequenceId: "sequence_main",
+      },
+      facts: { sequenceCount: 1, clipCount: 1, artifactCount: 0, transcriptArtifacts: 0 },
+      capabilities: { extensions: [] },
+      session: {
+        id: "session_test",
+        clientId: "codex-test",
+        capabilities: ["project:read" as const],
+        expiresAt: "2026-08-10T12:00:00.000Z",
+      },
+    };
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(projectSummary));
+    const client = new AgentCutClient({
+      baseUrl: "http://127.0.0.1:4318",
+      fetcher,
+      session: sessionFixture(),
+    });
+
+    await expect(client.project()).resolves.toEqual(projectSummary);
+    expect(fetcher.mock.calls[0]?.[0]).toEqual(new URL("http://127.0.0.1:4318/api/agent/project"));
+  });
+
+  it("applies a core timeline transaction with protocol defaults and rejects empty operations", async () => {
+    const transactionResult = {
+      protocolVersion: "0.1.0" as const,
+      revision: 10,
+      idempotentReplay: false,
+      record: {
+        transactionId: "tx_001",
+        baseRevision: 9,
+        committedRevision: 10,
+        committedAt: "2026-08-10T00:00:00.000Z",
+        beforeHash: `sha256:${"b".repeat(64)}`,
+        afterHash: `sha256:${"c".repeat(64)}`,
+        inverseOperationCount: 1,
+      },
+    };
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(transactionResult, 201));
+    const client = new AgentCutClient({
+      baseUrl: "http://127.0.0.1:4318",
+      fetcher,
+      session: sessionFixture(),
+    });
+    const operations = [{ type: "clip.update", clipId: "clip_1", patch: { enabled: false } }];
+
+    await expect(client.applyTimelineTransaction({
+      transactionId: "tx_001",
+      idempotencyKey: "client-test:tx:001",
+      projectId: "project_1",
+      sequenceId: "sequence_main",
+      baseRevision: 9,
+      reason: "Disable one clip",
+      operations,
+    })).resolves.toEqual(transactionResult);
+    expect(fetcher.mock.calls[0]?.[0]).toEqual(
+      new URL("http://127.0.0.1:4318/api/agent/timeline/transactions"),
+    );
+    expect(fetcher.mock.calls[0]?.[1]?.body).toBe(JSON.stringify({
+      protocolVersion: "0.1.0",
+      preconditions: [],
+      transactionId: "tx_001",
+      idempotencyKey: "client-test:tx:001",
+      projectId: "project_1",
+      sequenceId: "sequence_main",
+      baseRevision: 9,
+      reason: "Disable one clip",
+      operations,
+    }));
+    expect(fetcher.mock.calls[0]?.[1]?.headers).toEqual(expect.objectContaining({
+      "X-AgentCut-Request-Id": "client-test:tx:001",
+    }));
+
+    await expect(client.applyTimelineTransaction({
+      transactionId: "tx_empty",
+      idempotencyKey: "client-test:tx:empty",
+      projectId: "project_1",
+      sequenceId: "sequence_main",
+      baseRevision: 9,
+      reason: "Empty transaction",
+      operations: [],
+    })).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
   it("requests, reads, and applies only an exact approved payload", async () => {
     const pending = {
       approval: {

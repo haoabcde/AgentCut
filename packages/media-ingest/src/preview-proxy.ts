@@ -11,10 +11,8 @@ import { extname, join } from "node:path";
 import {
   BROWSER_PREVIEW_PROXY_PROFILE,
   createPreviewProxyBinding,
-  type Actor,
-  type Asset,
-  type Time,
-} from "@agentcut/timeline-schema";
+} from "@agentcut/host-extensions";
+import { type Actor, type Asset, type Time } from "@agentcut/timeline-schema";
 import { hashFile, probeMedia, type MediaProbe } from "./media-ingest.js";
 
 export interface EnsureBrowserPreviewProxyOptions {

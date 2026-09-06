@@ -82,6 +82,26 @@ describe("timeline project schema", () => {
     expect(result.errors.some((error) => error.keyword === "type")).toBe(true);
   });
 
+  it("keeps host extension metadata opaque and invokes registered extension validators", () => {
+    const withUnknown = structuredClone(fixture) as Record<string, any>;
+    withUnknown.extensions = { "vendor.customRule": { anything: true } };
+    withUnknown.assets[0].metadata = { "vendor.assetFacts": ["x"] };
+    expect(validateProjectDocument(withUnknown)).toEqual({ valid: true, errors: [] });
+
+    const calls: unknown[] = [];
+    const result = validateProjectDocument(fixture, {
+      extensionValidators: [() => {
+        calls.push(1);
+        return [{ instancePath: "/project/id", keyword: "hostRule", message: "host rule failed" }];
+      }],
+    });
+    expect(calls).toHaveLength(1);
+    expect(result).toEqual({
+      valid: false,
+      errors: [{ instancePath: "/project/id", keyword: "hostRule", message: "host rule failed" }],
+    });
+  });
+
   it("rejects dangling references and revision drift", () => {
     const invalid = structuredClone(fixture) as Record<string, any>;
     invalid.sequences[0].tracks[0].clips[0].assetId = "missing_asset";
@@ -90,44 +110,6 @@ describe("timeline project schema", () => {
     expect(result.errors.map((error) => error.keyword)).toEqual(
       expect.arrayContaining(["reference", "revision"]),
     );
-  });
-
-  it("binds one generated preview proxy to the exact source bytes", () => {
-    const valid = structuredClone(fixture) as Record<string, any>;
-    const source = valid.assets[0];
-    valid.assets.push({
-      id: "asset_preview_source",
-      kind: "generated",
-      uri: "proxies/source-preview.mp4",
-      contentHash: `sha256:${"b".repeat(64)}`,
-      availability: "online",
-      provenance: {
-        createdBy: { kind: "workflow", id: "preview_proxy_v1" },
-        createdAt: "2026-08-13T00:00:00.000Z",
-        reason: "Browser-compatible local preview",
-      },
-      metadata: {
-        "agentcut.previewProxy": {
-          schemaVersion: "1.0",
-          profile: "browser-h264-aac-1280-v1",
-          sourceAssetId: source.id,
-          sourceContentHash: source.contentHash,
-        },
-      },
-    });
-    expect(validateProjectDocument(valid)).toEqual({ valid: true, errors: [] });
-
-    const drifted = structuredClone(valid) as Record<string, any>;
-    drifted.assets[1].metadata["agentcut.previewProxy"].sourceContentHash = `sha256:${"c".repeat(64)}`;
-    expect(validateProjectDocument(drifted).errors).toEqual(expect.arrayContaining([
-      expect.objectContaining({ keyword: "sourceBinding" }),
-    ]));
-
-    const duplicate = structuredClone(valid) as Record<string, any>;
-    duplicate.assets.push({ ...structuredClone(duplicate.assets[1]), id: "asset_preview_duplicate" });
-    expect(validateProjectDocument(duplicate).errors).toEqual(expect.arrayContaining([
-      expect.objectContaining({ keyword: "uniquePreviewProxy" }),
-    ]));
   });
 
   it("rejects semantic locks pointing at missing objects", () => {

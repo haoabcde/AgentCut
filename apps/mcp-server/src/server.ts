@@ -1,9 +1,12 @@
 import {
   AgentCutClient,
   AgentCutClientError,
+  type AgentProjectSummary,
   type AgentSessionCredential,
   type AgentSemanticFinding,
   type AgentStatus,
+  type AgentTimelineTransactionInput,
+  type AgentTimelineTransactionResult,
   type AgentTranscriptPage,
   type ApprovalResponse,
   type CandidateSummary,
@@ -15,8 +18,12 @@ import { z } from "zod";
 
 export interface AgentCutMcpApi {
   status(): Promise<AgentStatus>;
+  project(): Promise<AgentProjectSummary>;
   candidates(): Promise<CandidateSummary[]>;
   transcript(input?: { offset?: number; limit?: number }): Promise<AgentTranscriptPage>;
+  applyTimelineTransaction(
+    input: AgentTimelineTransactionInput,
+  ): Promise<AgentTimelineTransactionResult>;
   generateRoughCut(input: RevisionWriteInput): Promise<AgentStatus>;
   analyzeSemantic(input: RevisionWriteInput): Promise<AgentStatus>;
   proposeSemanticFindings(input: RevisionWriteInput & {
@@ -110,6 +117,18 @@ const transcriptGetSchema = z.object({
   offset: z.number().int().nonnegative().max(10_000_000).optional(),
   limit: z.number().int().min(1).max(500).optional(),
 }).strict();
+const timelineTransactionSchema = z.object({
+  transactionId: stableIdSchema("transactionId", 256)
+    .describe("Caller-owned unique transaction id; reuse it with the same idempotencyKey only for an exact retry"),
+  idempotencyKey: stableIdSchema("idempotencyKey", 256),
+  projectId: stableIdSchema("projectId", 256),
+  sequenceId: stableIdSchema("sequenceId", 256),
+  baseRevision: z.number().int().nonnegative().describe("Current project revision obtained from a core read tool"),
+  reason: z.string().trim().min(1).max(500),
+  preconditions: z.array(z.record(z.string(), z.unknown())).max(50).default([]),
+  operations: z.array(z.record(z.string(), z.unknown())).min(1).max(500)
+    .describe("Typed edit operations; the host engine validates them and rejects the whole transaction atomically"),
+}).strict();
 const semanticFindingSchema = z.object({
   category: z.enum(["repetition", "restatement", "false_start", "incomplete", "correction"]),
   removeStartWordId: stableIdSchema("removeStartWordId", 256),
@@ -202,6 +221,28 @@ export function createAgentCutMcpServer(options: CreateAgentCutMcpServerOptions 
       ...(input.offset !== undefined ? { offset: input.offset } : {}),
       ...(input.limit !== undefined ? { limit: input.limit } : {}),
     })),
+  );
+
+  server.registerTool(
+    "agentcut_project_get",
+    {
+      title: "Read protocol project summary",
+      description: "Core protocol read: project identity, revision, counts, and the host's declared extensions. Available on any AgentCut-compatible host, including hosts without media tooling.",
+      inputSchema: noInputSchema,
+      annotations: readOnlyAnnotations,
+    },
+    async () => runTool("project", () => client.project()),
+  );
+
+  server.registerTool(
+    "agentcut_timeline_apply_transaction",
+    {
+      title: "Apply a timeline transaction",
+      description: "Core protocol write: submit one atomic, revision-bound transaction of typed edit operations. The host engine validates the result and rejects the whole transaction atomically. Read the current revision first; on conflict, read the diff and re-plan. Operation shapes are host-validated; this tool does not bypass locks, approvals, or host policy.",
+      inputSchema: timelineTransactionSchema,
+      annotations: guardedWriteAnnotations,
+    },
+    async (input) => runTool("timeline", () => client.applyTimelineTransaction(input)),
   );
 
   server.registerTool(

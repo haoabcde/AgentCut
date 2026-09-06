@@ -152,6 +152,8 @@ export AGENTCUT_FFPROBE_PATH=/opt/homebrew/opt/ffmpeg-full/bin/ffprobe
 17. [Alpha 正式样本素材授权登记](./docs/17-alpha-authorization.md)
 18. [战略复盘 2026-09：协议定位、轻量化与模型演进免疫](./docs/18-strategy-review-2026-09.md)
 19. [协议化重构总体计划](./docs/19-protocol-program-plan.md)
+20. [Agent 剪辑协议规范 v0.1（草案）](./docs/protocol/agentcut-protocol-0.1.md)
+21. [ADR-001：内部 IR 不采用 OTIO](./docs/protocol/adr-001-internal-ir-not-otio.md)
 20. [Alpha Gate Benchmark](./benchmarks/alpha-gate/README.md)
 
 ## 下一步

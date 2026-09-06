@@ -9,6 +9,7 @@ import {
   type EditTransaction,
 } from "@agentcut/edit-commands";
 import { ProjectStore } from "@agentcut/project-store";
+import { TALKING_HEAD_EXTENSION_VALIDATORS } from "@agentcut/host-extensions";
 import type { AgentCutProjectDocument } from "@agentcut/timeline-schema";
 
 const VERIFIER_CLOCK = () => "2000-01-01T00:00:00.000Z";
@@ -48,7 +49,8 @@ export async function verifyAlphaProjectCorrectness(input: {
   sourceSha256: string;
 }): Promise<AlphaCorrectnessRun> {
   const runId = requiredText(input.requestId, "requestId");
-  const sourceStore = ProjectStore.open(input.databasePath);
+  const sourceStore = ProjectStore.open(input.databasePath,
+    { extensionValidators: TALKING_HEAD_EXTENSION_VALIDATORS });
   let sourceDocument: AgentCutProjectDocument;
   let sourceStateHash: string;
   try {
@@ -100,7 +102,10 @@ function verifyClone(input: {
     idempotency: failed("NOT_EVALUATED", "Probe transaction did not run"),
     revisionConflict: failed("NOT_EVALUATED", "Probe transaction did not run"),
   };
-  let store = ProjectStore.open(input.clonePath, { clock: VERIFIER_CLOCK });
+  let store = ProjectStore.open(input.clonePath, {
+    clock: VERIFIER_CLOCK,
+    extensionValidators: TALKING_HEAD_EXTENSION_VALIDATORS,
+  });
   try {
     const cloned = store.snapshot();
     if (hashProjectState(cloned) !== input.sourceStateHash) {
@@ -182,7 +187,10 @@ function verifyClone(input: {
     };
 
     store.close();
-    store = ProjectStore.open(input.clonePath, { clock: VERIFIER_CLOCK });
+    store = ProjectStore.open(input.clonePath, {
+      clock: VERIFIER_CLOCK,
+      extensionValidators: TALKING_HEAD_EXTENSION_VALIDATORS,
+    });
     const reopened = store.snapshot();
     let replayVerified = false;
     try {

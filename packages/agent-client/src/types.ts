@@ -250,3 +250,59 @@ export interface AlphaAuditResponse {
     candidates: CandidateSummary[];
   };
 }
+
+/** 协议 core 的工程概要：任何实现本协议的宿主都提供同一形状。 */
+export interface AgentProjectSummary {
+  protocolVersion: "0.1.0";
+  project: {
+    id: string;
+    name: string;
+    revision: number;
+    createdAt: string;
+    updatedAt: string;
+    activeSequenceId: string;
+  };
+  facts: {
+    sequenceCount: number;
+    clipCount: number;
+    artifactCount: number;
+    transcriptArtifacts: number;
+  };
+  capabilities: { extensions: string[] };
+  session?: {
+    id: string;
+    clientId: string;
+    capabilities: AgentCapability[];
+    expiresAt: string;
+  };
+}
+
+/**
+ * 任意通过宿主校验的 timeline transaction 输入。operations 保持结构化透传：
+ * 宿主端的 typed engine 是唯一校验者，客户端不复制 operation schema。
+ */
+export interface AgentTimelineTransactionInput {
+  transactionId: string;
+  idempotencyKey: string;
+  projectId: string;
+  sequenceId: string;
+  baseRevision: number;
+  reason: string;
+  preconditions?: unknown[];
+  operations: unknown[];
+}
+
+export interface AgentTimelineTransactionResult {
+  protocolVersion: "0.1.0";
+  revision: number;
+  idempotentReplay: boolean;
+  record: {
+    transactionId: string;
+    baseRevision: number;
+    committedRevision: number;
+    committedAt: string;
+    beforeHash: string;
+    afterHash: string;
+    inverseOperationCount: number;
+  };
+}

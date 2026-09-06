@@ -4,10 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Readable } from "node:stream";
 import { compileEditProposalBundle } from "@agentcut/edit-commands";
+import { createPreviewProxyBinding } from "@agentcut/host-extensions";
 import { ProjectStore } from "@agentcut/project-store";
 import { RenderError, type PersistedRenderJobOptions } from "@agentcut/render-engine";
 import {
-  createPreviewProxyBinding,
   type AgentCutProjectDocument,
   type Asset,
   type CaptionDocumentArtifact,
@@ -1228,6 +1228,132 @@ describe("AgentCut local daemon", () => {
           sessionId: createdBody.session.id,
         }),
       ]));
+    } finally {
+      store.close();
+    }
+  });
+
+  it("serves the protocol core: project summary and arbitrary validated timeline transactions", async () => {
+    const fixture = createFixtureProject("agentcut-agent-core-", (document) => {
+      document.artifacts = document.artifacts.filter((artifact) =>
+        artifact.kind !== "deletionCandidateSet" && artifact.kind !== "editProposal",
+      );
+    });
+    const bootstrapToken = "agentcut-core-bootstrap-token-that-is-long-enough";
+    const options = {
+      ...fixture.options,
+      agentBootstrapToken: bootstrapToken,
+      agentAccessClock: () => "2026-08-10T01:00:00.000Z",
+    };
+    const created = await request(options, "POST", "/api/agent/sessions", {
+      requestId: "agent-core-session-001",
+      clientId: "codex-core",
+      capabilities: ["project:read", "timeline:write:low_risk_only"],
+      ttlSeconds: 3_600,
+    }, { authorization: `Bearer ${bootstrapToken}` });
+    const headers = {
+      authorization: `Bearer ${(created.body as { accessToken: string }).accessToken!}`,
+    };
+
+    const project = await request(options, "GET", "/api/agent/project", undefined, headers);
+    expect(project.status).toBe(200);
+    expect(project.body).toEqual({
+      protocolVersion: "0.1.0",
+      project: expect.objectContaining({
+        id: "project_demo_001",
+        revision: 0,
+        activeSequenceId: "sequence_main",
+      }),
+      facts: expect.objectContaining({ clipCount: 1, transcriptArtifacts: 1 }),
+      capabilities: { extensions: ["talking-head-review"] },
+      session: expect.objectContaining({ clientId: "codex-core" }),
+    });
+
+    const transaction = {
+      protocolVersion: "0.1.0",
+      transactionId: "tx_core_disable_clip",
+      idempotencyKey: "core:disable-clip:001",
+      projectId: "project_demo_001",
+      sequenceId: "sequence_main",
+      baseRevision: 0,
+      reason: "Disable first take while re-planning",
+      preconditions: [],
+      operations: [{ type: "clip.update", clipId: "clip_take_1", patch: { enabled: false } }],
+      actor: { kind: "user", id: "spoofed-identity" },
+    };
+    const applied = await request(
+      options,
+      "POST",
+      "/api/agent/timeline/transactions",
+      transaction,
+      { ...headers, "x-agentcut-request-id": "core:disable-clip:001" },
+    );
+    expect(applied.status).toBe(201);
+    expect(applied.body).toEqual({
+      protocolVersion: "0.1.0",
+      revision: 1,
+      idempotentReplay: false,
+      record: expect.objectContaining({
+        transactionId: "tx_core_disable_clip",
+        baseRevision: 0,
+        committedRevision: 1,
+      }),
+    });
+
+    const replay = await request(
+      options,
+      "POST",
+      "/api/agent/timeline/transactions",
+      transaction,
+      headers,
+    );
+    expect(replay.status).toBe(200);
+    expect(replay.body).toEqual(expect.objectContaining({ revision: 1, idempotentReplay: true }));
+
+    await expect(request(
+      options,
+      "POST",
+      "/api/agent/timeline/transactions",
+      { ...transaction, transactionId: "tx_core_stale", idempotencyKey: "core:stale:001" },
+      headers,
+    )).rejects.toMatchObject({ code: "REVISION_CONFLICT" });
+
+    const diff = await request(
+      options,
+      "GET",
+      "/api/agent/project/diff?fromRevision=0",
+      undefined,
+      headers,
+    );
+    expect(diff.body).toEqual(expect.objectContaining({
+      headRevision: 1,
+      changes: [expect.objectContaining({
+        transactionId: "tx_core_disable_clip",
+        actor: { kind: "agent", id: "codex-core" },
+        operationTypes: ["clip.update"],
+        objectIds: ["clip_take_1"],
+      })],
+    }));
+
+    await expect(request(
+      options,
+      "POST",
+      "/api/agent/timeline/transactions",
+      {
+        ...transaction,
+        transactionId: "tx_core_missing_clip",
+        idempotencyKey: "core:missing-clip:001",
+        baseRevision: 1,
+        operations: [{ type: "clip.update", clipId: "clip_missing", patch: { enabled: false } }],
+      },
+      headers,
+    )).rejects.toMatchObject({ code: "OBJECT_NOT_FOUND" });
+
+    const store = ProjectStore.open(fixture.databasePath);
+    try {
+      expect(store.snapshot().project.revision).toBe(1);
+      expect(store.snapshot().sequences[0]!.tracks.flatMap((track) => track.clips))
+        .toEqual([expect.objectContaining({ id: "clip_take_1", enabled: false })]);
     } finally {
       store.close();
     }

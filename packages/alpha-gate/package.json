@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@agentcut/edit-commands": "workspace:*",
+    "@agentcut/host-extensions": "workspace:*",
     "@agentcut/project-store": "workspace:*",
     "@agentcut/render-engine": "workspace:*",
     "@agentcut/review-projection": "workspace:*",

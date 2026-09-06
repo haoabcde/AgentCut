@@ -15,6 +15,7 @@ import {
   assertProjectDocument,
   type Actor,
   type AgentCutProjectDocument,
+  type ExtensionValidator,
 } from "@agentcut/timeline-schema";
 
 const STORE_VERSION = 1;
@@ -34,6 +35,7 @@ export interface ProjectStoreOptions {
   busyTimeoutMs?: number;
   maximumDatabasePages?: number;
   failureInjector?: (point: FailurePoint) => void;
+  extensionValidators?: readonly ExtensionValidator[];
 }
 
 export interface StoreCheckpoint {
@@ -246,6 +248,7 @@ export class ProjectStore implements Disposable {
   readonly #db: DatabaseSync;
   readonly #clock: Clock;
   readonly #checkpointInterval: number;
+  readonly #extensionValidators: readonly ExtensionValidator[];
   readonly #failureInjector: ((point: FailurePoint) => void) | undefined;
   #closed = false;
 
@@ -260,6 +263,7 @@ export class ProjectStore implements Disposable {
     });
     this.#clock = options.clock ?? (() => new Date().toISOString());
     this.#checkpointInterval = options.checkpointInterval ?? 25;
+    this.#extensionValidators = options.extensionValidators ?? [];
     if (!Number.isInteger(this.#checkpointInterval) || this.#checkpointInterval < 1) {
       this.#db.close();
       throw new RangeError("checkpointInterval must be a positive integer");
@@ -281,7 +285,7 @@ export class ProjectStore implements Disposable {
     document: AgentCutProjectDocument,
     options: ProjectStoreOptions = {},
   ): ProjectStore {
-    assertProjectDocument(document);
+    assertProjectDocument(document, { extensionValidators: options.extensionValidators });
     const store = new ProjectStore(databasePath, options);
     try {
       if (store.#readState(false)) {
@@ -304,7 +308,7 @@ export class ProjectStore implements Disposable {
       store = new ProjectStore(databasePath, options);
       const state = store.#readState();
       store.#assertStoreVersion();
-      const document = parseDocument(state.documentJson);
+      const document = parseDocument(state.documentJson, store.#extensionValidators);
       const actualHash = hashProjectState(document);
       if (actualHash !== state.stateHash) {
         throw new ProjectStoreError("STORE_CORRUPT", "Current project state hash does not match", {
@@ -338,7 +342,7 @@ export class ProjectStore implements Disposable {
   }
 
   snapshot(): AgentCutProjectDocument {
-    return parseDocument(this.#readState().documentJson);
+    return parseDocument(this.#readState().documentJson, this.#extensionValidators);
   }
 
   getRecord(transactionId: string): CommandRecord | undefined {
@@ -1162,7 +1166,7 @@ export class ProjectStore implements Disposable {
           );
         }
         const record = parseRecord(existing.recordJson);
-        const document = parseDocument(state.documentJson);
+        const document = parseDocument(state.documentJson, this.#extensionValidators);
         this.#db.exec("COMMIT");
         committed = true;
         return { document, record, idempotentReplay: true };
@@ -1181,11 +1185,11 @@ export class ProjectStore implements Disposable {
         );
       }
 
-      const current = parseDocument(state.documentJson);
+      const current = parseDocument(state.documentJson, this.#extensionValidators);
       if (hashProjectState(current) !== state.stateHash) {
         throw new ProjectStoreError("STORE_CORRUPT", "Current project state hash does not match");
       }
-      const result = applyTransaction(current, transaction, this.#clock);
+      const result = applyTransaction(current, transaction, this.#clock, this.#extensionValidators);
       this.#inject("after_apply");
       this.#insertCommand(transaction, payloadHash, result.record);
       this.#inject("after_command_insert");
@@ -1234,7 +1238,7 @@ export class ProjectStore implements Disposable {
     this.#db.exec("BEGIN IMMEDIATE");
     try {
       const state = this.#readState();
-      const document = parseDocument(state.documentJson);
+      const document = parseDocument(state.documentJson, this.#extensionValidators);
       const actualHash = hashProjectState(document);
       if (actualHash !== state.stateHash) {
         throw new ProjectStoreError("STORE_CORRUPT", "Cannot checkpoint a state with a mismatched hash");
@@ -1271,7 +1275,7 @@ export class ProjectStore implements Disposable {
     ).get();
     if (!checkpointRow) throw new ProjectStoreError("STORE_CORRUPT", "Genesis checkpoint is missing");
     const genesisRevision = readNumber(checkpointRow, "revision");
-    let replayed = parseDocument(readString(checkpointRow, "document_json"));
+    let replayed = parseDocument(readString(checkpointRow, "document_json"), this.#extensionValidators);
     const genesisHash = readString(checkpointRow, "state_hash");
     if (hashProjectState(replayed) !== genesisHash) {
       throw new ProjectStoreError("STORE_CORRUPT", "Genesis checkpoint hash does not match");
@@ -1283,7 +1287,7 @@ export class ProjectStore implements Disposable {
     let replayedCommands = 0;
     for (const row of rows) {
       const record = parseRecord(readString(row, "record_json"));
-      const replay = applyTransaction(replayed, record.request, () => record.committedAt);
+      const replay = applyTransaction(replayed, record.request, () => record.committedAt, this.#extensionValidators);
       if (replay.record.beforeHash !== record.beforeHash
         || replay.record.afterHash !== record.afterHash
         || replay.record.committedRevision !== record.committedRevision) {
@@ -1658,10 +1662,13 @@ export class ProjectStore implements Disposable {
   }
 }
 
-function parseDocument(json: string): AgentCutProjectDocument {
+function parseDocument(
+  json: string,
+  extensionValidators: readonly ExtensionValidator[] = [],
+): AgentCutProjectDocument {
   try {
     const value: unknown = JSON.parse(json);
-    assertProjectDocument(value);
+    assertProjectDocument(value, { extensionValidators });
     return value;
   } catch (error) {
     throw new ProjectStoreError("STORE_CORRUPT", "Stored project document is invalid", {

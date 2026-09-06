@@ -1,5 +1,6 @@
 import { join, resolve } from "node:path";
 import { ProjectStore } from "@agentcut/project-store";
+import { TALKING_HEAD_EXTENSION_VALIDATORS } from "@agentcut/host-extensions";
 import { createAlphaAuditDraft } from "./audit.js";
 import { verifyAlphaProjectCorrectness } from "./correctness.js";
 import { AlphaEvidenceStore } from "./evidence.js";
@@ -48,7 +49,8 @@ export async function runAlphaCorrectnessCli(arguments_: string[], io: AlphaCorr
 }
 
 function readAudit(databasePath: string) {
-  const store = ProjectStore.open(databasePath);
+  const store = ProjectStore.open(databasePath,
+    { extensionValidators: TALKING_HEAD_EXTENSION_VALIDATORS });
   try {
     return createAlphaAuditDraft(store.snapshot(), store.listRecords());
   } finally {

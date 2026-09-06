@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, link, unlink, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { ProjectStore } from "@agentcut/project-store";
+import { TALKING_HEAD_EXTENSION_VALIDATORS } from "@agentcut/host-extensions";
 import { createAlphaAuditDraft } from "./audit.js";
 
 export interface AlphaAuditCliIo {
@@ -15,7 +16,8 @@ export async function runAlphaAuditCli(arguments_: string[], io: AlphaAuditCliIo
     const parsed = parseArguments(arguments_);
     const projectRoot = resolve(parsed.projectRoot);
     const outputPath = resolve(parsed.outputPath);
-    const store = ProjectStore.open(join(projectRoot, "agentcut.sqlite"));
+    const store = ProjectStore.open(join(projectRoot, "agentcut.sqlite"),
+      { extensionValidators: TALKING_HEAD_EXTENSION_VALIDATORS });
     let draft;
     try {
       draft = createAlphaAuditDraft(store.snapshot(), store.listRecords());

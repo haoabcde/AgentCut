@@ -30,14 +30,17 @@ import {
 import {
   applyTransaction,
   compileEditProposalBundle,
+  EditError,
   type CommandRecord,
   type EditOperation,
+  type EditTransaction,
 } from "@agentcut/edit-commands";
 import {
   ProjectStore,
   type AgentCapability,
   type AgentSession,
   type ProjectApproval,
+  type ProjectStoreOptions,
 } from "@agentcut/project-store";
 import {
   evaluateTimelineSegments,
@@ -57,13 +60,23 @@ import {
 import type { AgentCutProjectDocument } from "@agentcut/timeline-schema";
 import {
   findPreviewProxyAsset,
+  readAlphaTrialEnrollment,
   readPreviewProxyBinding,
-} from "@agentcut/timeline-schema";
+  TALKING_HEAD_EXTENSION_VALIDATORS,
+} from "@agentcut/host-extensions";
 import {
   readUiCredentialFile,
   rotateUiCredentialFile,
   type UiCredential,
 } from "../../../scripts/agentcut-credentials.mjs";
+
+/** 口播宿主声明的扩展语义在 daemon 的全部 store 读写路径上生效。 */
+function openHostStore(databasePath: string, options: ProjectStoreOptions = {}): ProjectStore {
+  return ProjectStore.open(databasePath, {
+    extensionValidators: TALKING_HEAD_EXTENSION_VALIDATORS,
+    ...options,
+  });
+}
 
 export interface AgentCutServerOptions {
   databasePath: string;
@@ -151,7 +164,7 @@ export async function handleAgentCutRequest(
       credential.bootstrapToken,
       "UI_BOOTSTRAP_DENIED",
     );
-    const store = ProjectStore.open(options.databasePath);
+    const store = openHostStore(options.databasePath);
     let projectId: string;
     try {
       projectId = store.snapshot().project.id;
@@ -264,6 +277,16 @@ export async function handleAgentCutRequest(
           options,
         );
         sendJson(response, 200, reviewResponse(store, options, agentSession), options.allowedOrigin);
+        return;
+      }
+      if (agentRoute.kind === "project_get") {
+        sendJson(response, 200, coreProjectSummary(store, agentSession), options.allowedOrigin);
+        return;
+      }
+      if (agentRoute.kind === "timeline_transaction") {
+        const body = await readJsonBody(request);
+        const result = applyAgentTimelineTransaction(store, body, agentSession, options);
+        sendJson(response, result.idempotentReplay ? 200 : 201, result, options.allowedOrigin);
         return;
       }
       if (agentRoute.kind === "project_diff") {
@@ -390,7 +413,7 @@ export async function handleAgentCutRequest(
         "UI bootstrap rotation requires a file-backed Studio credential",
       );
     }
-    const store = ProjectStore.open(options.databasePath, {
+    const store = openHostStore(options.databasePath, {
       ...(options.uiSessionClock ? { clock: options.uiSessionClock } : {}),
     });
     try {
@@ -440,7 +463,7 @@ export async function handleAgentCutRequest(
     return;
   }
   if (request.method === "GET" && url.pathname === "/api/health") {
-    const store = ProjectStore.open(options.databasePath);
+    const store = openHostStore(options.databasePath);
     try {
       sendJson(response, 200, {
         status: "ok",
@@ -453,7 +476,7 @@ export async function handleAgentCutRequest(
     return;
   }
   if (request.method === "GET" && url.pathname === "/api/review") {
-    const store = ProjectStore.open(options.databasePath);
+    const store = openHostStore(options.databasePath);
     try {
       sendJson(response, 200, reviewResponse(store, options, agentSession), options.allowedOrigin);
     } finally {
@@ -465,7 +488,7 @@ export async function handleAgentCutRequest(
   if (request.method === "GET" && candidatePreview) {
     const candidateId = decodeURIComponent(candidatePreview[1]!);
     const baseRevision = readRevisionQuery(url, "baseRevision", true)!;
-    const store = ProjectStore.open(options.databasePath);
+    const store = openHostStore(options.databasePath);
     try {
       const document = store.snapshot();
       assertCurrentRevision(document.project.revision, baseRevision);
@@ -617,7 +640,7 @@ export async function handleAgentCutRequest(
     const requestId = readRequiredString(body, "requestId");
     const baseRevision = readBaseRevision(body);
     const wordIds = readStringArray(body, "wordIds");
-    const store = ProjectStore.open(options.databasePath);
+    const store = openHostStore(options.databasePath);
     try {
       const document = store.snapshot();
       assertCurrentRevision(document.project.revision, baseRevision);
@@ -649,7 +672,7 @@ export async function handleAgentCutRequest(
     const baseRevision = readBaseRevision(body);
     const wordIds = readStringArray(body, "wordIds");
     const transactionId = `tx_manual_delete_${requestId}`;
-    const store = ProjectStore.open(options.databasePath);
+    const store = openHostStore(options.databasePath);
     try {
       if (!store.getRecord(transactionId)) {
         assertAlphaTrialEditingActive(options);
@@ -672,7 +695,7 @@ export async function handleAgentCutRequest(
     const body = await readJsonBody(request);
     const gapId = readRequiredString(body, "gapId");
     const baseRevision = readBaseRevision(body);
-    const store = ProjectStore.open(options.databasePath);
+    const store = openHostStore(options.databasePath);
     try {
       const document = store.snapshot();
       assertCurrentRevision(document.project.revision, baseRevision);
@@ -707,7 +730,7 @@ export async function handleAgentCutRequest(
     const gapId = readRequiredString(body, "gapId");
     const baseRevision = readBaseRevision(body);
     const transactionId = `tx_manual_gap_delete_${requestId}`;
-    const store = ProjectStore.open(options.databasePath);
+    const store = openHostStore(options.databasePath);
     try {
       if (!store.getRecord(transactionId)) {
         assertAlphaTrialEditingActive(options);
@@ -734,7 +757,7 @@ export async function handleAgentCutRequest(
     const requestId = readRequiredString(body, "requestId");
     const baseRevision = readBaseRevision(body);
     const transactionId = `tx_review_keep_batch_${requestId}`;
-    const store = ProjectStore.open(options.databasePath);
+    const store = openHostStore(options.databasePath);
     try {
       if (!store.getRecord(transactionId)) {
         assertAlphaTrialEditingActive(options);
@@ -775,7 +798,7 @@ export async function handleAgentCutRequest(
       throw new ApiError("INVALID_REQUEST", "candidateIds must contain unique entries");
     }
     const transactionId = `tx_review_accept_batch_${requestId}`;
-    const store = ProjectStore.open(options.databasePath);
+    const store = openHostStore(options.databasePath);
     try {
       if (store.getRecord(transactionId)) {
         sendJson(response, 200, reviewResponse(store, options), options.allowedOrigin);
@@ -811,7 +834,7 @@ export async function handleAgentCutRequest(
     const baseRevision = readBaseRevision(body);
     const preset = readExportPreset(body);
     const jobId = `job_export_${requestId}`;
-    const store = ProjectStore.open(options.databasePath);
+    const store = openHostStore(options.databasePath);
     let shouldSchedule = false;
     try {
       let job;
@@ -869,7 +892,7 @@ export async function handleAgentCutRequest(
   }
   const exportStatus = /^\/api\/exports\/([^/]+)$/.exec(url.pathname);
   if (request.method === "GET" && exportStatus) {
-    const store = ProjectStore.open(options.databasePath);
+    const store = openHostStore(options.databasePath);
     try {
       sendJson(
         response,
@@ -893,7 +916,7 @@ export async function handleAgentCutRequest(
       );
     }
     const jobId = decodeURIComponent(exportCancellation[1]!);
-    const store = ProjectStore.open(options.databasePath);
+    const store = openHostStore(options.databasePath);
     try {
       const before = store.getJob(jobId);
       if (before.type !== "export.render") {
@@ -925,7 +948,7 @@ export async function handleAgentCutRequest(
     if (!Number.isSafeInteger(baseRevision) || (baseRevision as number) < 0) {
       throw new ApiError("INVALID_REQUEST", "baseRevision must be a non-negative integer");
     }
-    const store = ProjectStore.open(options.databasePath);
+    const store = openHostStore(options.databasePath);
     try {
       if (store.getRecord(`tx_restore_${requestId}`)) {
         sendJson(response, 200, reviewResponse(store, options), options.allowedOrigin);
@@ -962,7 +985,7 @@ export async function handleAgentCutRequest(
     const transactionId = action === "accept"
       ? `tx_review_accept_${requestId}`
       : `tx_review_keep_${requestId}`;
-    const store = ProjectStore.open(options.databasePath);
+    const store = openHostStore(options.databasePath);
     try {
       if (store.getRecord(transactionId)) {
         sendJson(response, 200, reviewResponse(store, options), options.allowedOrigin);
@@ -1006,7 +1029,7 @@ export async function handleAgentCutRequest(
     const requestId = readRequiredString(body, "requestId");
     const baseRevision = readBaseRevision(body);
     const transactionId = `tx_review_unlock_${requestId}`;
-    const store = ProjectStore.open(options.databasePath);
+    const store = openHostStore(options.databasePath);
     try {
       if (store.getRecord(transactionId)) {
         sendJson(response, 200, reviewResponse(store, options), options.allowedOrigin);
@@ -1046,8 +1069,10 @@ export async function handleAgentCutRequest(
 
 type AgentRoute =
   | { kind: "mapped"; canonicalPath: string; capability: AgentCapability }
+  | { kind: "project_get"; capability: AgentCapability }
   | { kind: "project_diff"; capability: AgentCapability }
   | { kind: "transcript_get"; capability: AgentCapability }
+  | { kind: "timeline_transaction"; capability: AgentCapability }
   | { kind: "semantic_findings"; capability: AgentCapability }
   | { kind: "approval_request"; capability: AgentCapability }
   | { kind: "approval_get"; capability: AgentCapability; approvalId: string }
@@ -1066,8 +1091,14 @@ function resolveAgentRoute(method: string, path: string): AgentRoute | undefined
   if (method === "POST" && path === "/api/agent/semantic-findings") {
     return { kind: "semantic_findings", capability: "analysis:propose" };
   }
+  if (method === "GET" && path === "/api/agent/project") {
+    return { kind: "project_get", capability: "project:read" };
+  }
   if (method === "GET" && path === "/api/agent/project/diff") {
     return { kind: "project_diff", capability: "project:read" };
+  }
+  if (method === "POST" && path === "/api/agent/timeline/transactions") {
+    return { kind: "timeline_transaction", capability: "timeline:write:low_risk_only" };
   }
   if (method === "POST" && path === "/api/agent/approvals") {
     return { kind: "approval_request", capability: "approval:request" };
@@ -1122,7 +1153,7 @@ function resolveAgentRoute(method: string, path: string): AgentRoute | undefined
 
 function openAgentAccessStore(options: AgentCutServerOptions): ProjectStore {
   requiredAgentBootstrapToken(options);
-  return ProjectStore.open(options.databasePath, {
+  return openHostStore(options.databasePath, {
     ...(options.agentAccessClock ? { clock: options.agentAccessClock } : {}),
   });
 }
@@ -1212,7 +1243,7 @@ function inspectUiSession(
   const expiresMillis = Number(match[1]);
   const nonce = match[2]!;
   const receivedSignature = match[3]!;
-  const store = ProjectStore.open(options.databasePath);
+  const store = openHostStore(options.databasePath);
   let projectId: string;
   try {
     projectId = store.snapshot().project.id;
@@ -1249,7 +1280,7 @@ function synchronizeUiCredentialRotation(
   credential: UiCredential,
 ): void {
   if (!credential.lastRotation) return;
-  const store = ProjectStore.open(options.databasePath, {
+  const store = openHostStore(options.databasePath, {
     ...(options.uiSessionClock ? { clock: options.uiSessionClock } : {}),
   });
   try {
@@ -1305,7 +1336,7 @@ function recordUiAccess(
   allowed: boolean,
   reason: "paired" | "allowed" | "missing" | "invalid" | "expired",
 ): void {
-  const store = ProjectStore.open(options.databasePath, {
+  const store = openHostStore(options.databasePath, {
     ...(options.uiSessionClock ? { clock: options.uiSessionClock } : {}),
   });
   try {
@@ -1495,6 +1526,98 @@ function applyApprovedCandidate(
     consumedBySessionId: session.id,
     transactionId,
   });
+}
+
+/** 协议 core：工程概要，形状与 reference host 一致；扩展能力列表由宿主声明。 */
+function coreProjectSummary(store: ProjectStore, session: AgentSession): unknown {
+  const document = store.snapshot();
+  const clips = document.sequences.flatMap((sequence) =>
+    sequence.tracks.flatMap((track) => track.clips),
+  );
+  return {
+    protocolVersion: "0.1.0",
+    project: {
+      id: document.project.id,
+      name: document.project.name,
+      revision: document.project.revision,
+      createdAt: document.project.createdAt,
+      updatedAt: document.project.updatedAt,
+      activeSequenceId: document.project.activeSequenceId,
+    },
+    facts: {
+      sequenceCount: document.sequences.length,
+      clipCount: clips.length,
+      artifactCount: document.artifacts.length,
+      transcriptArtifacts: document.artifacts.filter((artifact) => artifact.kind === "transcript").length,
+    },
+    capabilities: {
+      extensions: ["talking-head-review"],
+    },
+    session: {
+      id: session.id,
+      clientId: session.clientId,
+      capabilities: [...session.capabilities],
+      expiresAt: session.expiresAt,
+    },
+  };
+}
+
+/** 协议 core：Agent 提交任意 typed operations 组合的原子事务；engine 与宿主策略负责校验。 */
+interface AgentTimelineTransactionResult {
+  protocolVersion: string;
+  revision: number;
+  idempotentReplay: boolean;
+  record: {
+    transactionId: string;
+    baseRevision: number;
+    committedRevision: number;
+    committedAt: string;
+    beforeHash: string;
+    afterHash: string;
+    inverseOperationCount: number;
+  };
+}
+
+function applyAgentTimelineTransaction(
+  store: ProjectStore,
+  body: Record<string, unknown>,
+  session: AgentSession,
+  options: AgentCutServerOptions,
+): AgentTimelineTransactionResult {
+  const transaction = body as unknown as EditTransaction;
+  if (transaction.protocolVersion !== "0.1.0") {
+    throw new ApiError("INVALID_REQUEST", "protocolVersion must be 0.1.0");
+  }
+  const document = store.snapshot();
+  if (transaction.projectId !== document.project.id) {
+    throw new ApiError("INVALID_REQUEST", "Transaction projectId does not match this project");
+  }
+  // baseRevision 由 engine 校验：commit 先按 idempotencyKey 幂等重放（允许过期 baseRevision 的精确重试），
+  // 非重放的过期 revision 由 engine 抛 REVISION_CONFLICT；宿主级预检会破坏重试语义。
+  assertAlphaTrialEditingActive(options);
+  let result;
+  try {
+    result = store.commit({ ...transaction, actor: { kind: "agent", id: session.clientId } });
+  } catch (error) {
+    if (error instanceof EditError) {
+      throw new ApiError(error.code, error.message, error.details ?? {});
+    }
+    throw error;
+  }
+  return {
+    protocolVersion: "0.1.0",
+    revision: result.document.project.revision,
+    idempotentReplay: result.idempotentReplay,
+    record: {
+      transactionId: result.record.transactionId,
+      baseRevision: result.record.baseRevision,
+      committedRevision: result.record.committedRevision,
+      committedAt: result.record.committedAt,
+      beforeHash: result.record.beforeHash,
+      afterHash: result.record.afterHash,
+      inverseOperationCount: result.record.inverseOperations.length,
+    },
+  };
 }
 
 function projectDiffResponse(store: ProjectStore, url: URL): unknown {
@@ -1910,6 +2033,14 @@ function alphaAuditResponse(options: AgentCutServerOptions): AlphaEvidenceRespon
 }
 
 function assertAlphaTrialEditingActive(options: AgentCutServerOptions): void {
+  // 未登记的项目直接放行：审计草稿按"全部 clip 为启用媒体"的口播形状渲染，
+  // 对含 disabled clip 的普通工程会崩溃——登记与否只需读 extensions，无需跑完整审计。
+  const project = openHostStore(options.databasePath);
+  try {
+    if (!readAlphaTrialEnrollment(project.snapshot())) return;
+  } finally {
+    project.close();
+  }
   const current = alphaAuditResponse(options);
   const trial = current.audit.project.alphaTrial;
   if (!trial || current.timing.state === "running") return;
@@ -1931,7 +2062,7 @@ function withAlphaAudit<T>(
     evidence: AlphaEvidenceStore,
   ) => T,
 ): T {
-  const project = ProjectStore.open(options.databasePath);
+  const project = openHostStore(options.databasePath);
   let draft: ReturnType<typeof createAlphaAuditDraft>;
   try {
     draft = createAlphaAuditDraft(project.snapshot(), project.listRecords());
@@ -1997,7 +2128,7 @@ function runRoughCutGeneration(
   baseRevision: number,
 ): unknown {
   const transactionId = `tx_rough_cut_generate_${requestId}`;
-  const store = ProjectStore.open(options.databasePath);
+  const store = openHostStore(options.databasePath);
   try {
     if (store.getRecord(transactionId)) return reviewResponse(store, options);
     assertAlphaTrialEditingActive(options);
@@ -2143,7 +2274,7 @@ function assertRoughCutReady(store: ProjectStore, document: AgentCutProjectDocum
 
 function scheduleExportJob(options: AgentCutServerOptions, jobId: string): void {
   queueMicrotask(() => {
-    const store = ProjectStore.open(options.databasePath);
+    const store = openHostStore(options.databasePath);
     const job = store.getJob(jobId);
     const input = exportJobInput(job.input);
     const canvas = exportSequenceCanvas(store, input.sequenceId);
@@ -2179,7 +2310,7 @@ function scheduleExportJob(options: AgentCutServerOptions, jobId: string): void 
 }
 
 export function recoverExportJobs(options: AgentCutServerOptions): void {
-  const store = ProjectStore.open(options.databasePath);
+  const store = openHostStore(options.databasePath);
   const pendingJobIds: string[] = [];
   const interruptedJobIds: string[] = [];
   try {
@@ -2217,7 +2348,7 @@ export function recoverExportJobs(options: AgentCutServerOptions): void {
 
 function scheduleExportRecovery(options: AgentCutServerOptions, jobId: string): void {
   queueMicrotask(() => {
-    const store = ProjectStore.open(options.databasePath);
+    const store = openHostStore(options.databasePath);
     const job = store.getJob(jobId);
     const input = exportJobInput(job.input);
     const controller = new AbortController();
@@ -2398,7 +2529,7 @@ async function runSemanticReview(
   const transactionId = `tx_semantic_review_${requestId}`;
   const jobId = `job_semantic_review_${requestId}`;
   const actor = { kind: "workflow" as const, id: "semantic_review_v1" };
-  const initialStore = ProjectStore.open(options.databasePath);
+  const initialStore = openHostStore(options.databasePath);
   let context: {
     document: ReturnType<ProjectStore["snapshot"]>;
     transcriptArtifactId: string;
@@ -2453,7 +2584,7 @@ async function runSemanticReview(
       createdAt: new Date().toISOString(),
       provider,
     });
-    const store = ProjectStore.open(options.databasePath);
+    const store = openHostStore(options.databasePath);
     try {
       if (store.getRecord(transactionId)) return reviewResponse(store, options);
       const latest = store.snapshot();
@@ -2486,7 +2617,7 @@ async function runSemanticReview(
 }
 
 function markSemanticJobFailed(databasePath: string, jobId: string, error: unknown): void {
-  const store = ProjectStore.open(databasePath);
+  const store = openHostStore(databasePath);
   try {
     const job = store.getJob(jobId);
     if (job.status !== "running") return;
@@ -2508,7 +2639,7 @@ function serveMedia(
   options: AgentCutServerOptions,
   assetId: string,
 ): void {
-  const store = ProjectStore.open(options.databasePath);
+  const store = openHostStore(options.databasePath);
   let uri: string;
   try {
     const asset = store.snapshot().assets.find((candidate) => candidate.id === assetId);
@@ -2540,7 +2671,7 @@ function serveArtifact(
   options: AgentCutServerOptions,
   artifactId: string,
 ): void {
-  const store = ProjectStore.open(options.databasePath);
+  const store = openHostStore(options.databasePath);
   let uri: string;
   try {
     const artifact = store.snapshot().artifacts.find((candidate) => candidate.id === artifactId);
@@ -2768,6 +2899,10 @@ export function statusForCode(code: string): number {
   if (code === "INVALID_RANGE") return 416;
   if (code === "INVALID_DOCUMENT" || code === "RENDER_CAPABILITY_MISSING") return 422;
   if (code === "INVALID_SELECTION") return 400;
+  if (code === "LOCKED" || code === "PRECONDITION_FAILED") return 409;
+  if (code === "SEQUENCE_NOT_FOUND") return 404;
+  if (code === "PROJECT_MISMATCH") return 400;
+  if (code === "DUPLICATE_ID" || code === "INVALID_OPERATION") return 422;
   if (code === "INVALID_REQUEST" || code === "INVALID_LABEL"
     || code === "UI_CREDENTIAL_ROTATION_INVALID") return 400;
   return 500;

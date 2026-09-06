@@ -1,5 +1,5 @@
 {
-  "name": "@agentcut/media-ingest",
+  "name": "@agentcut/host-extensions",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,10 +9,9 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run src"
+    "test": "pnpm run build && vitest run src"
   },
   "dependencies": {
-    "@agentcut/host-extensions": "workspace:*",
     "@agentcut/timeline-schema": "workspace:*"
   }
 }

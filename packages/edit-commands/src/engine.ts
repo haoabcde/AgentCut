@@ -14,6 +14,7 @@ import {
   type AgentCutProjectDocument,
   type Asset,
   type Clip,
+  type ExtensionValidator,
   type LockRegion,
   type ProjectArtifact,
   type Sequence,
@@ -34,14 +35,20 @@ export type Clock = () => string;
 
 export class TransactionEngine {
   readonly #clock: Clock;
+  readonly #extensionValidators: readonly ExtensionValidator[];
   #document: AgentCutProjectDocument;
   readonly #records = new Map<string, CommandRecord>();
   readonly #idempotency = new Map<string, string>();
 
-  constructor(document: AgentCutProjectDocument, clock: Clock = () => new Date().toISOString()) {
-    assertProjectDocument(document);
+  constructor(
+    document: AgentCutProjectDocument,
+    clock: Clock = () => new Date().toISOString(),
+    options: { extensionValidators?: readonly ExtensionValidator[] } = {},
+  ) {
+    assertProjectDocument(document, { extensionValidators: options.extensionValidators });
     this.#document = structuredClone(document);
     this.#clock = clock;
+    this.#extensionValidators = options.extensionValidators ?? [];
   }
 
   snapshot(): AgentCutProjectDocument {
@@ -68,7 +75,7 @@ export class TransactionEngine {
       return { document: this.snapshot(), record: structuredClone(record), idempotentReplay: true };
     }
 
-    const result = applyTransaction(this.#document, transaction, this.#clock);
+    const result = applyTransaction(this.#document, transaction, this.#clock, this.#extensionValidators);
     this.#document = result.document;
     this.#records.set(transaction.transactionId, structuredClone(result.record));
     this.#idempotency.set(transaction.idempotencyKey, transaction.transactionId);
@@ -99,6 +106,7 @@ export function applyTransaction(
   document: AgentCutProjectDocument,
   transaction: EditTransaction,
   clock: Clock = () => new Date().toISOString(),
+  extensionValidators: readonly ExtensionValidator[] = [],
 ): CommitResult {
   assertTransactionEnvelope(document, transaction);
   const working = structuredClone(document);
@@ -140,7 +148,7 @@ export function applyTransaction(
     committedAt,
   });
 
-  const validation = validateProjectDocument(working);
+  const validation = validateProjectDocument(working, { extensionValidators });
   if (!validation.valid) {
     throw new EditError("INVALID_DOCUMENT", "Transaction produced an invalid project document", {
       errors: validation.errors,

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { link, mkdir, unlink, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { ProjectStore } from "@agentcut/project-store";
+import { TALKING_HEAD_EXTENSION_VALIDATORS } from "@agentcut/host-extensions";
 import { createAlphaAuditDraft } from "./audit.js";
 import {
   alphaEvidenceBundleFileSha256,
@@ -21,7 +22,8 @@ export async function runAlphaEvidenceCli(arguments_: string[], io: AlphaEvidenc
     const parsed = parseArguments(arguments_);
     const projectRoot = resolve(parsed.projectRoot);
     const outputPath = resolve(parsed.outputPath);
-    const projectStore = ProjectStore.open(join(projectRoot, "agentcut.sqlite"));
+    const projectStore = ProjectStore.open(join(projectRoot, "agentcut.sqlite"),
+      { extensionValidators: TALKING_HEAD_EXTENSION_VALIDATORS });
     let draft;
     try {
       draft = createAlphaAuditDraft(projectStore.snapshot(), projectStore.listRecords());

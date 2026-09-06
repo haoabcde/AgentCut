@@ -13,10 +13,13 @@ import {
 } from "@agentcut/media-ingest";
 import { ProjectStore, type ProjectJob } from "@agentcut/project-store";
 import {
-  assertProjectDocument,
   createAlphaTrialEnrollment,
   findPreviewProxyAsset,
   readAlphaTrialEnrollment,
+  TALKING_HEAD_EXTENSION_VALIDATORS,
+} from "@agentcut/host-extensions";
+import {
+  assertProjectDocument,
   type AgentCutProjectDocument,
   type Asset,
   type Rate,
@@ -165,7 +168,7 @@ export async function createRoughCutProject(
 
   if (existsSync(databasePath)) {
     resumed = true;
-    store = ProjectStore.open(databasePath);
+    store = ProjectStore.open(databasePath, { extensionValidators: TALKING_HEAD_EXTENSION_VALIDATORS });
     const document = store.snapshot();
     try {
       assertAlphaTrialResumeMode(document, options.alphaTrial === true);
@@ -233,7 +236,10 @@ export async function createRoughCutProject(
       ...(options.ffprobePath ? { ffprobePath: options.ffprobePath } : {}),
     });
     previewProxyAsset = previewProxy.asset;
-    store = ProjectStore.create(databasePath, document, { checkpointInterval: 1 });
+    store = ProjectStore.create(databasePath, document, {
+      checkpointInterval: 1,
+      extensionValidators: TALKING_HEAD_EXTENSION_VALIDATORS,
+    });
     store.commit({
       protocolVersion: "0.1.0",
       transactionId: "tx_roughcut_import",

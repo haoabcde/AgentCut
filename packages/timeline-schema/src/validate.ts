@@ -12,10 +12,6 @@ import type {
   TimeRange,
   TranscriptArtifact,
 } from "./types.js";
-import {
-  PREVIEW_PROXY_METADATA_KEY,
-  readPreviewProxyBinding,
-} from "./preview-proxy.js";
 
 const ajv = new Ajv2020({ allErrors: true, strict: true, strictRequired: false });
 const addFormats = formatsModule as unknown as FormatsPlugin;
@@ -29,12 +25,21 @@ export interface ValidationIssue {
   message: string;
 }
 
+export type ExtensionValidator = (document: AgentCutProjectDocument) => ValidationIssue[];
+
+export interface ValidateProjectOptions {
+  extensionValidators?: readonly ExtensionValidator[] | undefined;
+}
+
 export interface ValidationResult {
   valid: boolean;
   errors: ValidationIssue[];
 }
 
-export function validateProjectDocument(value: unknown): ValidationResult {
+export function validateProjectDocument(
+  value: unknown,
+  options: ValidateProjectOptions = {},
+): ValidationResult {
   const structurallyValid = validateProject(value);
   const structuralErrors = structurallyValid
     ? []
@@ -44,7 +49,7 @@ export function validateProjectDocument(value: unknown): ValidationResult {
       message: error.message ?? "is invalid",
     }));
   const semanticErrors = structurallyValid
-    ? validateSemantics(value as AgentCutProjectDocument)
+    ? validateSemantics(value as AgentCutProjectDocument, options)
     : [];
   return {
     valid: structuralErrors.length === 0 && semanticErrors.length === 0,
@@ -52,8 +57,11 @@ export function validateProjectDocument(value: unknown): ValidationResult {
   };
 }
 
-export function assertProjectDocument(value: unknown): asserts value is AgentCutProjectDocument {
-  const result = validateProjectDocument(value);
+export function assertProjectDocument(
+  value: unknown,
+  options: ValidateProjectOptions = {},
+): asserts value is AgentCutProjectDocument {
+  const result = validateProjectDocument(value, options);
   if (!result.valid) {
     const details = result.errors
       .map((error) => `${error.instancePath || "/"} ${error.message ?? "is invalid"}`)
@@ -62,8 +70,14 @@ export function assertProjectDocument(value: unknown): asserts value is AgentCut
   }
 }
 
-function validateSemantics(document: AgentCutProjectDocument): ValidationIssue[] {
+function validateSemantics(
+  document: AgentCutProjectDocument,
+  options: ValidateProjectOptions,
+): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
+  for (const extensionValidator of options.extensionValidators ?? []) {
+    issues.push(...extensionValidator(document));
+  }
   const seenIds = new Map<string, string>();
   const assetIds = new Set(document.assets.map((asset) => asset.id));
   const sequenceIds = new Set(document.sequences.map((sequence) => sequence.id));
@@ -84,33 +98,6 @@ function validateSemantics(document: AgentCutProjectDocument): ValidationIssue[]
 
   recordId(document.project.id, "/project/id");
   document.assets.forEach((asset, assetIndex) => recordId(asset.id, `/assets/${assetIndex}/id`));
-  const previewProxyKeys = new Set<string>();
-  document.assets.forEach((asset, assetIndex) => {
-    const path = `/assets/${assetIndex}/metadata/${PREVIEW_PROXY_METADATA_KEY}`;
-    const hasBinding = asset.metadata !== undefined
-      && Object.prototype.hasOwnProperty.call(asset.metadata, PREVIEW_PROXY_METADATA_KEY);
-    if (!hasBinding) return;
-    const binding = readPreviewProxyBinding(asset);
-    if (!binding) {
-      issues.push(issue(path, "previewProxyBinding", "must contain a supported preview proxy binding"));
-      return;
-    }
-    const source = document.assets.find((candidate) => candidate.id === binding.sourceAssetId);
-    if (asset.kind !== "generated") {
-      issues.push(issue(path, "previewProxyBinding", "must belong to a generated asset"));
-    }
-    if (!source || source.id === asset.id) {
-      issues.push(issue(`${path}/sourceAssetId`, "reference", "must reference another source asset"));
-    } else if (source.contentHash !== binding.sourceContentHash) {
-      issues.push(issue(`${path}/sourceContentHash`, "sourceBinding", "must match the source asset content hash"));
-    }
-    const key = `${binding.sourceAssetId}:${binding.profile}`;
-    if (previewProxyKeys.has(key)) {
-      issues.push(issue(path, "uniquePreviewProxy", "duplicates the source/profile preview proxy"));
-    } else {
-      previewProxyKeys.add(key);
-    }
-  });
   document.artifacts.forEach((artifact, artifactIndex) => {
     recordId(artifact.id, `/artifacts/${artifactIndex}/id`);
   });

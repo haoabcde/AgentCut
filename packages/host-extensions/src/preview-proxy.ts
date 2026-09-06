@@ -1,4 +1,4 @@
-import type { AgentCutProjectDocument, Asset } from "./types.js";
+import type { AgentCutProjectDocument, Asset } from "@agentcut/timeline-schema";
 
 export const PREVIEW_PROXY_METADATA_KEY = "agentcut.previewProxy";
 export const BROWSER_PREVIEW_PROXY_PROFILE = "browser-h264-aac-1280-v1";

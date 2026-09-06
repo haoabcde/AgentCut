@@ -1,5 +1,7 @@
 # Agent 接入协议
 
+> **状态（2026-09-06）**：本文档是产品时期（TalkCut 拆分前）的协议设计稿。其中 core 面（session/project/timeline transaction/diff）已实现并由 [docs/protocol/agentcut-protocol-0.1.md](./protocol/agentcut-protocol-0.1.md)（协议规范 v0.1）取代；候选/审批/导出等宿主扩展方法仍由本仓库产品层快照实现，规范归属宿主文档。两者冲突时以协议规范与实现为准。
+
 ## 1. 目标
 
 - 同一能力通过 MCP、CLI、TypeScript SDK 暴露。

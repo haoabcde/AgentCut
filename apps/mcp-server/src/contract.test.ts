@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createAgentCutMcpServer, type AgentCutMcpApi } from "./server.js";
 
 describe("AgentCut MCP in-memory contract", () => {
-  it("discovers the 13-tool surface and preserves transcript/proposal inputs", async () => {
+  it("discovers the 15-tool surface and preserves transcript/proposal/timeline inputs", async () => {
     const transcript = {
       protocolVersion: "0.1.0" as const,
       project: { id: "project_1", revision: 9 },
@@ -26,10 +26,39 @@ describe("AgentCut MCP in-memory contract", () => {
       },
     };
     const status = statusFixture();
+    const projectSummary = {
+      protocolVersion: "0.1.0" as const,
+      project: {
+        id: "project_1",
+        name: "Fixture",
+        revision: 9,
+        createdAt: "2026-08-10T00:00:00.000Z",
+        updatedAt: "2026-08-10T00:00:00.000Z",
+        activeSequenceId: "sequence_main",
+      },
+      facts: { sequenceCount: 1, clipCount: 1, artifactCount: 3, transcriptArtifacts: 1 },
+      capabilities: { extensions: ["talking-head-review"] },
+    };
+    const timelineResult = {
+      protocolVersion: "0.1.0" as const,
+      revision: 10,
+      idempotentReplay: false,
+      record: {
+        transactionId: "tx_contract_001",
+        baseRevision: 9,
+        committedRevision: 10,
+        committedAt: "2026-08-10T00:00:00.000Z",
+        beforeHash: `sha256:${"c".repeat(64)}`,
+        afterHash: `sha256:${"d".repeat(64)}`,
+        inverseOperationCount: 1,
+      },
+    };
     const api: AgentCutMcpApi = {
       status: vi.fn(async () => status),
+      project: vi.fn(async () => projectSummary),
       candidates: vi.fn(async () => []),
       transcript: vi.fn(async () => transcript),
+      applyTimelineTransaction: vi.fn(async () => timelineResult),
       generateRoughCut: vi.fn(async () => status),
       analyzeSemantic: vi.fn(async () => status),
       proposeSemanticFindings: vi.fn(async () => status),
@@ -63,12 +92,38 @@ describe("AgentCut MCP in-memory contract", () => {
         "agentcut_export_get",
         "agentcut_export_start",
         "agentcut_project_diff",
+        "agentcut_project_get",
         "agentcut_project_status",
         "agentcut_rough_cut_generate",
         "agentcut_semantic_analyze",
         "agentcut_semantic_findings_propose",
+        "agentcut_timeline_apply_transaction",
         "agentcut_transcript_get",
       ]);
+
+      const project = await client.callTool({ name: "agentcut_project_get", arguments: {} });
+      expect(project.isError).not.toBe(true);
+      expect(project.structuredContent).toEqual({ project: projectSummary });
+
+      const applied = await client.callTool({
+        name: "agentcut_timeline_apply_transaction",
+        arguments: {
+          transactionId: "tx_contract_001",
+          idempotencyKey: "contract:timeline:001",
+          projectId: "project_1",
+          sequenceId: "sequence_main",
+          baseRevision: 9,
+          reason: "Contract test transaction",
+          operations: [{ type: "clip.update", clipId: "clip_1", patch: { enabled: false } }],
+        },
+      });
+      expect(applied.isError).not.toBe(true);
+      expect(applied.structuredContent).toEqual({ timeline: timelineResult });
+      expect(api.applyTimelineTransaction).toHaveBeenCalledWith(expect.objectContaining({
+        transactionId: "tx_contract_001",
+        idempotencyKey: "contract:timeline:001",
+        baseRevision: 9,
+      }));
 
       const read = await client.callTool({
         name: "agentcut_transcript_get",

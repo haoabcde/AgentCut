@@ -3,11 +3,14 @@ import type {
   AgentCapability,
   ApprovalResponse,
   AgentCutWireError,
+  AgentProjectSummary,
   AgentSessionCredential,
   AgentSessionDescriptor,
   AgentSessionResponse,
   AgentStatus,
   AgentSemanticFinding,
+  AgentTimelineTransactionInput,
+  AgentTimelineTransactionResult,
   AgentTranscriptPage,
   AlphaAuditResponse,
   CandidateSummary,
@@ -189,6 +192,29 @@ export class AgentCutClient {
     return this.#request<ProjectDiffResponse>("GET", `/api/agent/project/diff?${params}`);
   }
 
+  /** 协议 core：任何实现本协议的宿主（包括无媒体管线的 reference host）都提供。 */
+  async project(): Promise<AgentProjectSummary> {
+    return this.#request<AgentProjectSummary>("GET", "/api/agent/project");
+  }
+
+  /** 协议 core：提交任意 typed operations 组合的原子事务，宿主端 engine 负责校验与执行。 */
+  async applyTimelineTransaction(
+    input: AgentTimelineTransactionInput,
+  ): Promise<AgentTimelineTransactionResult> {
+    if (!Array.isArray(input.operations) || input.operations.length === 0) {
+      throw new AgentCutClientError(0, "INVALID_INPUT", "operations must contain at least one operation");
+    }
+    return this.#request<AgentTimelineTransactionResult>(
+      "POST",
+      "/api/agent/timeline/transactions",
+      {
+        protocolVersion: "0.1.0",
+        preconditions: [],
+        ...input,
+      },
+    );
+  }
+
   async requestCandidateApproval(input: {
     candidateId: string;
     baseRevision: number;
@@ -231,7 +257,9 @@ export class AgentCutClient {
     const session = await this.session();
     const requestId = body && "requestId" in body && typeof body.requestId === "string"
       ? body.requestId
-      : undefined;
+      : body && "idempotencyKey" in body && typeof body.idempotencyKey === "string"
+        ? body.idempotencyKey
+        : undefined;
     return this.#fetchJson<T>(method, path, body, {
       Authorization: `Bearer ${session.accessToken}`,
       ...(requestId ? { "X-AgentCut-Request-Id": requestId } : {}),

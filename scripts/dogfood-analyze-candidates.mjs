@@ -5,6 +5,7 @@ import {
   generateTalkingHeadCandidates,
 } from "../packages/candidate-engine/dist/index.js";
 import { ProjectStore } from "../packages/project-store/dist/index.js";
+import { TALKING_HEAD_EXTENSION_VALIDATORS } from "../packages/host-extensions/dist/index.js";
 import { buildTranscriptReviewProjection } from "../packages/review-projection/dist/index.js";
 
 const [databasePath, mediaPath] = process.argv.slice(2);
@@ -12,7 +13,10 @@ if (!databasePath || !mediaPath) {
   throw new Error("Usage: node scripts/dogfood-analyze-candidates.mjs <project.sqlite> <managed-media>");
 }
 
-const store = ProjectStore.open(databasePath, { checkpointInterval: 1 });
+const store = ProjectStore.open(databasePath, {
+  checkpointInterval: 1,
+  extensionValidators: TALKING_HEAD_EXTENSION_VALIDATORS,
+});
 try {
   const document = store.snapshot();
   const transcript = [...document.artifacts].reverse().find((artifact) =>

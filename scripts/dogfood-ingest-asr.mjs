@@ -3,6 +3,7 @@ import { basename, join } from "node:path";
 import { normalizeAsrResult } from "../packages/asr-engine/dist/index.js";
 import { ingestMedia, requireAudioStream } from "../packages/media-ingest/dist/index.js";
 import { ProjectStore } from "../packages/project-store/dist/index.js";
+import { TALKING_HEAD_EXTENSION_VALIDATORS } from "../packages/host-extensions/dist/index.js";
 import { assertProjectDocument } from "../packages/timeline-schema/dist/index.js";
 
 const [sourcePath, rawAsrPath, outputDirectory] = process.argv.slice(2);
@@ -86,8 +87,11 @@ const project = {
   versions: [],
   history: { headRevision: 0, records: [] },
 };
-assertProjectDocument(project);
-const store = ProjectStore.create(databasePath, project, { checkpointInterval: 1 });
+assertProjectDocument(project, { extensionValidators: TALKING_HEAD_EXTENSION_VALIDATORS });
+const store = ProjectStore.create(databasePath, project, {
+  checkpointInterval: 1,
+  extensionValidators: TALKING_HEAD_EXTENSION_VALIDATORS,
+});
 try {
   store.commit({
     protocolVersion: "0.1.0",

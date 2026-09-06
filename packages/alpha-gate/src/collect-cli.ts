@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { link, mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { ProjectStore } from "@agentcut/project-store";
+import { TALKING_HEAD_EXTENSION_VALIDATORS } from "@agentcut/host-extensions";
 import { createAlphaAuditDraft, type AlphaAuditDraft } from "./audit.js";
 import {
   alphaEvidenceBundleFileSha256,
@@ -196,7 +197,8 @@ function parseManifest(source: string): AlphaGateManifest {
 }
 
 function readAudit(databasePath: string): AlphaAuditDraft {
-  const store = ProjectStore.open(databasePath);
+  const store = ProjectStore.open(databasePath,
+    { extensionValidators: TALKING_HEAD_EXTENSION_VALIDATORS });
   try {
     return createAlphaAuditDraft(store.snapshot(), store.listRecords());
   } finally {

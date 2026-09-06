@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@agentcut/asr-engine": "workspace:*",
+    "@agentcut/host-extensions": "workspace:*",
     "@agentcut/media-ingest": "workspace:*",
     "@agentcut/project-store": "workspace:*",
     "@agentcut/timeline-schema": "workspace:*"

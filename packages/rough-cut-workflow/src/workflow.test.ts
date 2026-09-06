@@ -3,8 +3,8 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ProjectStore } from "@agentcut/project-store";
+import { findPreviewProxyAsset } from "@agentcut/host-extensions";
 import {
-  findPreviewProxyAsset,
   type Asset,
   type TranscriptArtifact,
 } from "@agentcut/timeline-schema";

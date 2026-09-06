@@ -2,7 +2,7 @@ import type { CommandRecord } from "@agentcut/edit-commands";
 import { evaluateTimelineSegments } from "@agentcut/render-engine";
 import { buildTranscriptReviewProjection, type ReviewState } from "@agentcut/review-projection";
 import { convertTime } from "@agentcut/timeline-engine";
-import { readAlphaTrialEnrollment } from "@agentcut/timeline-schema";
+import { readAlphaTrialEnrollment } from "@agentcut/host-extensions";
 import type {
   AgentCutProjectDocument,
   Actor,
