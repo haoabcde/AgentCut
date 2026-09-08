@@ -2,6 +2,33 @@
 
 本文件记录已经实际落地的产品、架构和工程变更。每次有效修改都应同步更新，以便后续 Agent 和开发者区分已验证事实、执行假设与待完成事项。
 
+## 2026-09-06：P5 准备——开源发布材料（LICENSE/英文 README/quickstart/CONTRIBUTING/SECURITY）与 OpenChatCut 克隆对比
+
+### 目标
+
+执行 docs/19 P5 中可自主推进的部分：发布材料落盘 + OpenChatCut 逐条克隆对比（公开动作——转公开仓库、tag、发布公告——按 GOAL.md 停止请示，不在本轮）。
+
+### OpenChatCut 克隆对比（docs/20-agentcut-vs-openchatcut.md）
+
+- 克隆 `0xsline/OpenChatCut` commit `19cba6e`（v0.2.14，AGPL-3.0-or-later）到 /tmp（不进本仓库，避免许可证污染），由子代理逐文件核实并给 `文件:行号` 引用；对比文档每条差异均可溯源。
+- **docs/18 假设修正两处**（docs/18 已加修正注记，docs/20 §2 为完整证据）：其"无 schema 迁移"不成立（`src/persist/migrations/` 有 v1→v3 runner）；"无审计"部分不成立（外部提案存储/agent 变更日志/run ledger/一次性审批门禁，但无跨会话 actor 身份审计）。"绑自家 UI"大体成立（~85% 工具需浏览器长轮询，存在离线服务端数据面子集）。核心判断"协议私有、非开放标准"不变。
+- 网传工具清单证伪：`project_read`/`timeline_edit` 等不存在；实际 = 5 控制 + 6 会话 + ~113 编辑器工具 + 渐进披露（ToolSearch/load_skill）。
+- **独立协议定位经核实成立**：其协议即产品 API，无独立 IR 规范/JSON Schema/公开 conformance kit/协议版本协商；单 Bearer 全权、无 capability 范围化与撤销协议化；AGPL 与 MIT 复用互斥。
+- 吸收清单（clean-room，进 0.2 候选）：渐进式工具披露、per-tool 恢复策略（`ToolEffect`/`ToolRecoveryPolicy` 四分类、不可逆工具禁自动重试）、审批一次性消费绑定 args digest、revision-drift 前置取消（agent-client 层可选优化）。
+
+### 发布材料
+
+- `LICENSE`（MIT，"AgentCut contributors"）；`CONTRIBUTING.md`（范围纪律、协议变更四步：规范先行→conformance 同步→版本政策→只增优先；完整性不变量清单；许可卫生）；`SECURITY.md`（loopback 信任模型、私有漏洞报告渠道、诚实限制清单）。
+- README 重构为双语开源门面：新英文 `README.md`（协议定位 + 3 分钟 quickstart + 机制图 + monorepo 表 + conformance 使用 + 双语文档索引），原中文内容原样迁移至 `README.zh-CN.md`（顶部语言切换）。
+- `scripts/quickstart.mjs` + 根 `pnpm quickstart`：seed 演示工程 → 起 reference-host（127.0.0.1:4318）→ 打印 MCP 配置（Claude Code/Codex/TOML）与纯 HTTP 全流程（bootstrap session → project/timeline 读 → 原子事务 → diff）。演示 DB 每次重建、token 随机、`.agentcut-quickstart/` 入 gitignore。首次运行即抓到模板字符串语法错（残留 `)`）并修复；16 MCP 工具与 23 conformance 检查等 README 断言已对照代码核实。
+
+### 验证与待办
+
+- **quickstart 活体验证通过（2026-09-08）**：新增 `scripts/verify-quickstart.mjs`（`pnpm quickstart:verify`）——启动 quickstart 宿主后按其打印的演练完整走 HTTP 并逐项断言宿主状态：health、bootstrap session（201 + `agc_` token + 3 capabilities）、project 读（revision 0）、timeline 发现读（`sequence_main`）、原子事务（revision 0→1，inverseOperations=1，**请求体故意冒充 user actor，宿主强制为 session 身份 `agent/quickstart-verify`**）、同 idempotencyKey 重放（200 replay=true 且 revision 不动）、diff（恰 1 条 clip.update/clip_take_1）。输出 `QUICKSTART VERIFY: ALL CHECKS PASSED`。演练 payload 已与 server.ts 逐字段核对（路由/capability 映射/事务体校验/`clip.update` patch 形状/fixture 三个 ID）。
+- **OTIO 集成测试静默 skip 修复（2026-09-08）**：Homebrew 把 Python 升到 3.14 后 PATH 首个 `python3` 变化，otio 装在 `/usr/bin/python3`(3.9) 的用户 site，round-trip 集成测试从"执行"退化为 3 个 skip（无失败，易漏看）。`packages/otio-interop/src/python.ts` 三处硬编码 `python3` 收拢为 `resolvePython()`：默认 PATH `python3`，`AGENTCUT_OTIO_PYTHON` 显式覆盖（进程级缓存，README 已记）。带 `AGENTCUT_OTIO_PYTHON=/usr/bin/python3` 的全量 check exit 0、**479/479 通过、0 skip**（含 round-trip 官方库读写回验证）；不带该变量时 476 通过 + 3 skip、同样 exit 0——无 OTIO 的机器不阻塞。
+- 待补：全新克隆（/tmp）跑通 Gate P5 的"15 分钟"验收 + 全量 check 后提交 P5 材料（权限分类器故障间歇阻塞非只读命令，恢复后补跑）。
+- 公开三步（仓库转公开、首次 tag、发布公告）**未执行**，按 GOAL.md 等用户明确确认。
+
 ## 2026-09-06：P4 推进——OTIO 互操作适配器（导出优先 + loss report + round-trip 等价）
 
 ### 目标

@@ -20,6 +20,8 @@
     "check": "pnpm build && pnpm -r typecheck && pnpm -r test",
     "alpha:new-sample": "node scripts/new-alpha-sample.mjs",
     "e2e:agent": "node scripts/agent-e2e.mjs",
+    "quickstart": "node scripts/quickstart.mjs",
+    "quickstart:verify": "node scripts/verify-quickstart.mjs",
     "demo:shorts": "node demos/short-video-generator/scripts/run-demo.mjs --synthetic",
     "demo:shorts:custom": "node demos/short-video-generator/scripts/run-demo.mjs",
     "demo:shorts:web": "node demos/short-video-generator/scripts/serve.mjs"

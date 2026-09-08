@@ -13,6 +13,12 @@ AgentCut Timeline IR ↔ OTIO 边界适配器（ADR-001：IR 是唯一事实源�
 
 官方库缺失时 `exportTimeline` 抛出带安装提示的错误；集成测试自动 skip 并在报告中保留 skip 原因。
 
+默认使用 PATH 上的首个 `python3`。机器上有多个 Python、且 otio 装在非首个解释器（如 Homebrew 升级后 PATH 顶部的 python3 没有用户级 site-packages）时，用环境变量显式指定：
+
+```bash
+export AGENTCUT_OTIO_PYTHON=/usr/bin/python3
+```
+
 ## 用法
 
 ```ts

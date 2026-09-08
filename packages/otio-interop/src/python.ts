@@ -7,9 +7,15 @@ import type { ExportPlan, NormalizedTimeline } from "./types.js";
 
 const TOOLS_DIR = join(dirname(fileURLToPath(import.meta.url)), "../tools");
 const OTIO_INSTALL_HINT =
-  "opentimelineio (official library) is not installed. Run: python3 -m pip install --user opentimelineio";
+  "opentimelineio (official library) is not installed for the resolved Python. " +
+  "Run: python3 -m pip install --user opentimelineio — or point AGENTCUT_OTIO_PYTHON at an interpreter that has it";
 
 let cachedOtioVersion: string | null | undefined;
+
+/** OTIO 官方库绑定的解释器：默认 PATH 上的 python3；多 Python 机器（如 otio 装在非 PATH 首个解释器）用 AGENTCUT_OTIO_PYTHON 显式指定。进程级缓存：环境变量须在进程启动前设置。 */
+export function resolvePython(): string {
+  return process.env.AGENTCUT_OTIO_PYTHON ?? "python3";
+}
 
 /** 官方 OTIO 库是否可用；不可用时集成测试应显式 skip（与 ffmpeg 矩阵同一模式）。 */
 export function otioAvailability(): { available: boolean; version: string | null } {
@@ -18,7 +24,7 @@ export function otioAvailability(): { available: boolean; version: string | null
   }
   try {
     cachedOtioVersion = execFileSync(
-      "python3",
+      resolvePython(),
       ["-c", "import opentimelineio as otio; print(otio.__version__)"],
       { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
     ).trim();
@@ -36,7 +42,7 @@ export function writeOtioFile(plan: ExportPlan, outPath: string): string {
   try {
     const planPath = join(directory, "plan.json");
     writeFileSync(planPath, JSON.stringify(plan));
-    execFileSync("python3", [join(TOOLS_DIR, "otio_write.py"), planPath, outPath], {
+    execFileSync(resolvePython(), [join(TOOLS_DIR, "otio_write.py"), planPath, outPath], {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -54,7 +60,7 @@ export function readOtioFile(otioPath: string): NormalizedTimeline {
   const { available } = otioAvailability();
   if (!available) throw new Error(OTIO_INSTALL_HINT);
   try {
-    const output = execFileSync("python3", [join(TOOLS_DIR, "otio_read.py"), otioPath], {
+    const output = execFileSync(resolvePython(), [join(TOOLS_DIR, "otio_read.py"), otioPath], {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
       maxBuffer: 64 * 1024 * 1024,

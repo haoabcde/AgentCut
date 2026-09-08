@@ -23,6 +23,8 @@
 | video-talkcraft（PolyForm 非商业许可） | Remotion 动效包装 Skill（SHOTBOOK + 字级锚点） | 是"生成包装层"不是"剪辑决策层"；商用需授权；注意与 TalkCut 命名混淆 |
 | Descript / CapCut / VEED | 截至 2026-09 均无 MCP/Agent 接口 | 巨头未动，开源窗口期真实存在但在收窄 |
 
+> **2026-09-06 修正（P5 前置）**：上表 OpenChatCut 行的三处假设经克隆核实（commit `19cba6e`）需部分修正——"无 schema 迁移"不成立（有 v1→v3 迁移 runner）、"无审计"部分不成立（有外部提案存储/agent 变更日志/run ledger）；"绑自家 UI"大体成立（约 85% 工具需浏览器，但存在离线服务端数据面子集）。"协议私有、非开放标准"的核心判断与"独立协议"定位经核实**成立**。完整证据与逐项对比见 [docs/20](./20-agentcut-vs-openchatcut.md)。
+
 关键趋势：业界正向 OTIO/FCPXML 既有标准 IR 靠拢（OTIO v0.16 加入实验性编辑命令），"提案-审阅-原子提交"正成为 Agent 剪辑的共识交互模式——这验证了 AgentCut 的 proposal/review 方向，同时要求公开回答"为什么不是 OTIO + 扩展"。
 
 ## 3. 设计原则一：轻量化——站在巨人肩膀上

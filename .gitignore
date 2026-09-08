@@ -5,6 +5,7 @@ coverage/
 .DS_Store
 *.log
 .agentcut/
+.agentcut-quickstart/
 packages/asr-worker/.venv/
 __pycache__/
 .playwright-mcp/
