@@ -26,8 +26,8 @@
 
 - **quickstart 活体验证通过（2026-09-08）**：新增 `scripts/verify-quickstart.mjs`（`pnpm quickstart:verify`）——启动 quickstart 宿主后按其打印的演练完整走 HTTP 并逐项断言宿主状态：health、bootstrap session（201 + `agc_` token + 3 capabilities）、project 读（revision 0）、timeline 发现读（`sequence_main`）、原子事务（revision 0→1，inverseOperations=1，**请求体故意冒充 user actor，宿主强制为 session 身份 `agent/quickstart-verify`**）、同 idempotencyKey 重放（200 replay=true 且 revision 不动）、diff（恰 1 条 clip.update/clip_take_1）。输出 `QUICKSTART VERIFY: ALL CHECKS PASSED`。演练 payload 已与 server.ts 逐字段核对（路由/capability 映射/事务体校验/`clip.update` patch 形状/fixture 三个 ID）。
 - **OTIO 集成测试静默 skip 修复（2026-09-08）**：Homebrew 把 Python 升到 3.14 后 PATH 首个 `python3` 变化，otio 装在 `/usr/bin/python3`(3.9) 的用户 site，round-trip 集成测试从"执行"退化为 3 个 skip（无失败，易漏看）。`packages/otio-interop/src/python.ts` 三处硬编码 `python3` 收拢为 `resolvePython()`：默认 PATH `python3`，`AGENTCUT_OTIO_PYTHON` 显式覆盖（进程级缓存，README 已记）。带 `AGENTCUT_OTIO_PYTHON=/usr/bin/python3` 的全量 check exit 0、**479/479 通过、0 skip**（含 round-trip 官方库读写回验证）；不带该变量时 476 通过 + 3 skip、同样 exit 0——无 OTIO 的机器不阻塞。
-- 待补：全新克隆（/tmp）跑通 Gate P5 的"15 分钟"验收 + 全量 check 后提交 P5 材料（权限分类器故障间歇阻塞非只读命令，恢复后补跑）。
-- 公开三步（仓库转公开、首次 tag、发布公告）**未执行**，按 GOAL.md 等用户明确确认。
+- **全新克隆 Gate 验收通过（2026-09-08）**：`git clone` 本仓库到 /tmp 全新目录 → `pnpm install` → `pnpm build` → `verify-quickstart`，总耗时 **8 秒**(install 3s / build 7s / 演练全绿），远低于 Gate P5 的 15 分钟标准；提交 `9bd172b`（17 文件）。诚实边界：本机 pnpm store 与工具链是热的，冷网络全新机器会更慢，15 分钟预算留了充足余量；公开发布前建议用户在真实新机上冒烟一次。
+- 待办仅余公开三步（仓库转公开、首次 tag、发布公告），**未执行**，按 GOAL.md 等用户明确确认。
 
 ## 2026-09-06：P4 推进——OTIO 互操作适配器（导出优先 + loss report + round-trip 等价）
 
