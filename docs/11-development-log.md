@@ -2,6 +2,19 @@
 
 本文件记录已经实际落地的产品、架构和工程变更。每次有效修改都应同步更新，以便后续 Agent 和开发者区分已验证事实、执行假设与待完成事项。
 
+## 2026-09-10：仓库转公开（用户确认的公开第一步）
+
+### 实际动作
+
+- 发布前安全扫描：395 个跟踪文件按路径与模式排查——无跟踪媒体文件、无 `.env`/密钥类文件；alpha-gate 证据包与授权登记文档仅含内容 hash、候选 ID 与"来源：用户本人"表述，无个人信息；`agc_` 仅作为文档中的 token 前缀说明出现，无真实凭据入库。
+- 远端状态核对：`origin/main` 与本地 `main` 均停在 7 月快照 `ba951c3`；确认其为 `a206c04` 祖先后，`git push origin codex/rough-cut-alpha:main` 快进推送（`ba951c3..a206c04`），本地 `main` 同步快进。
+- `gh repo edit --visibility public`：**https://github.com/haoabcde/AgentCut 已 PUBLIC**，默认分支 `main` = `a206c04`（P0–P5 全部提交随之公开）。
+
+### 待办
+
+- 剩余公开步骤：首个 tag、发布公告（docs/21 英文稿就绪）——等用户逐项确认。
+- 建议公开后在真实新机（冷 pnpm store）冒烟 quickstart 一次；P4 的 NLE 实测仍待人工。
+
 ## 2026-09-06：P5 准备——开源发布材料（LICENSE/英文 README/quickstart/CONTRIBUTING/SECURITY）与 OpenChatCut 克隆对比
 
 ### 目标

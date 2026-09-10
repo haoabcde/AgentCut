@@ -9,3 +9,5 @@ coverage/
 packages/asr-worker/.venv/
 __pycache__/
 .playwright-mcp/
+.claude/settings.json
+.claude/settings.local.json
